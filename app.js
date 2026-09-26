@@ -45,3 +45,4 @@ form.addEventListener('submit', (event) => {
 });
 
 setType('sale');
+document.querySelector('#approveButton').addEventListener('click',async()=>{const r=await fetch('/api/approve',{method:'POST',headers:{'Content-Type':'application/json','x-manager-passcode':document.querySelector('#managerPasscode').value},body:JSON.stringify({reference:document.querySelector('#approvalReference').value,role:document.querySelector('#roleSelect').value})});document.querySelector('#approvalMessage').textContent=r.ok?'Approved.':(await r.json()).error;});
