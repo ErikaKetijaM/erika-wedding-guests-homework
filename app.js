@@ -41,7 +41,7 @@ form.addEventListener('submit', (event) => {
       return;
     }
   }
-  message.textContent = `${reference} is ready to save. Connect Supabase to persist the transaction.`;
+  const body=state.type==='sale'?{kind:'sale',role:state.role,reference,description,amount,customer:document.querySelector('#customer').value,project:document.querySelector('#project').value.startsWith('A')?'A':'B',r:Number(splitField.querySelectorAll('input')[0].value),a:Number(splitField.querySelectorAll('input')[1].value),j:Number(splitField.querySelectorAll('input')[2].value)}:{kind:'expense',role:state.role,reference,description,amount,category:document.querySelector('#category').value,allocation:document.querySelector('#allocation').value==='Company overhead'?'overhead':document.querySelector('#allocation').value.endsWith('A')?'A':'B'};const saved=await fetch('/api/transactions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});message.textContent=saved.ok?`${reference} saved successfully.`:(await saved.json()).error;
 });
 
 setType('sale');
