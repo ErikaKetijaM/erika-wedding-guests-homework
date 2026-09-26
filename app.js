@@ -45,5 +45,5 @@ form.addEventListener('submit', (event) => {
 });
 
 setType('sale');
-fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.querySelector('#companyResult').textContent=`€${d.result.toFixed(2)}`;});
+fetch('/api/dashboard',{cache:'no-store'}).then(r=>r.json()).then(d=>{document.querySelector('#companyResult').textContent=`€${d.result.toFixed(2)}`;document.querySelector('.metric:nth-child(2) strong').textContent=`€${d.income.toFixed(2)}`;document.querySelector('.metric:nth-child(3) strong').textContent=`€${d.commission.toFixed(2)}`;document.querySelector('.metric:nth-child(4) strong').textContent=d.transactions.filter(t=>t.status!=='approved').length;}).catch(()=>{});
 document.querySelector('#approveButton').addEventListener('click',async()=>{const r=await fetch('/api/approve',{method:'POST',headers:{'Content-Type':'application/json','x-manager-passcode':document.querySelector('#managerPasscode').value},body:JSON.stringify({reference:document.querySelector('#approvalReference').value,role:document.querySelector('#roleSelect').value})});document.querySelector('#approvalMessage').textContent=r.ok?'Approved.':(await r.json()).error;});
