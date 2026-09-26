@@ -25,7 +25,7 @@ document.querySelector('#roleSelect').addEventListener('change', (event) => {
   message.textContent = `${state.role} selected. Backend permissions will be enforced when Supabase is connected.`;
 });
 
-form.addEventListener('submit', (event) => {
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const amount = Number(document.querySelector('#amount').value);
   const reference = document.querySelector('#reference').value.trim().toUpperCase();
