@@ -6,7 +6,8 @@ This repository contains the Day 4 homework application for **Ä’rika Ketija MuiÅ
 
 - Website foundation: dashboard, role selector, transaction forms, manager queue, and records view.
 - Secure deployment foundation: environment-variable template, health check, Vercel configuration, and database schema.
-- Still to connect: Supabase tables, Telegram webhook, Google Sheets synchronization, approval workflow, and final Test 1/Test 2 verification.
+- Connected foundation: Supabase schema, secure Vercel settings, and Telegram `/start` response endpoint.
+- Still to connect: Telegram webhook registration, transaction submission, Google Sheets synchronization, approval workflow, and final Test 1/Test 2 verification.
 
 ## Secrets
 
