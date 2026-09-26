@@ -27,6 +27,18 @@ export default async function handler(request, response) {
     await telegram(chatId, greeting);
     return response.status(200).json({ ok: true });
   }
+  if (text.startsWith('/sale ')) {
+    if (!employee || employee.role !== 'salesperson') { await telegram(chatId, 'Only linked salespeople can submit sales.'); return response.status(200).json({ ok: true }); }
+    const p = text.slice(6).split('|').map(x => x.trim());
+    const [reference, customer, project, description, amountText, rText, aText, jText] = p;
+    const amount = Number(amountText), r = Number(rText), a = Number(aText), j = Number(jText);
+    if (p.length !== 8 || !reference || !customer || !['A','B'].includes(project) || !description || amount <= 0 || r < 0 || a < 0 || j < 0 || r + a + j !== 100) { await telegram(chatId, 'Use: /sale REF|Customer|A or B|Description|Amount|Richard%|Anastasia%|Jean-Claude%'); return response.status(200).json({ ok: true }); }
+    const row = { reference: reference.toUpperCase(), kind: 'sale', submitted_by: (await api(`employees?telegram_user_id=eq.${message.from.id}&select=id`).then(x=>x.json()))[0].id, originating_chat_id: chatId, customer, project, description, amount, proposed_richard_pct:r, proposed_anastasia_pct:a, proposed_jean_claude_pct:j, status:'pending_approval' };
+    const saved = await api('transactions', { method:'POST', headers:{ Prefer:'return=representation' }, body:JSON.stringify(row) });
+    if (!saved.ok) { await telegram(chatId, saved.status === 409 ? 'That reference already exists.' : 'The sale could not be saved.'); return response.status(200).json({ok:true}); }
+    await telegram(chatId, `Sale ${row.reference} recorded: €${amount.toFixed(2)}, Project ${project}, Pending approval.`);
+    return response.status(200).json({ok:true});
+  }
   await telegram(chatId, 'Use /start to check your account link. Transaction submission will be enabled shortly.');
   return response.status(200).json({ ok: true });
 }
