@@ -26,7 +26,7 @@
         </label>
       </header>
 
-      <section class="status-strip" aria-label="Integration status">
+      <section id="integrationStatus" class="status-strip" aria-label="Integration status">
         <span><i class="dot dot-warn"></i> Demo data mode</span>
         <span>Supabase: not connected</span>
         <span>Telegram: not connected</span>
@@ -34,10 +34,10 @@
       </section>
 
       <section class="metric-grid" aria-label="Financial overview">
-        <article class="metric"><span>Company result</span><strong id="companyResult">€2,400.00</strong><small>Approved sales less all expenses</small></article>
-        <article class="metric"><span>Approved income</span><strong>€3,000.00</strong><small>€1,000 Project A · €2,000 Project B</small></article>
-        <article class="metric"><span>Commission earned</span><strong>€300.00</strong><small>Richard €90 · Anastasia €110 · Jean-Claude €100</small></article>
-        <article class="metric"><span>Pending decisions</span><strong>2</strong><small>1 sale · 1 expense allocation</small></article>
+        <article class="metric"><span>Company result</span><strong id="companyResult">—</strong><small id="companyResultNote">Loading live records…</small></article>
+        <article class="metric"><span>Approved income</span><strong id="approvedIncome">—</strong><small id="approvedIncomeNote">Loading live records…</small></article>
+        <article class="metric"><span>Commission earned</span><strong id="commissionEarned">—</strong><small id="commissionNote">Loading live records…</small></article>
+        <article class="metric"><span>Pending decisions</span><strong id="pendingDecisions">—</strong><small id="pendingNote">Loading live records…</small></article>
       </section>
 
       <section class="workspace-grid">
@@ -63,15 +63,13 @@
 
         <div class="panel">
           <div class="panel-heading"><div><p class="eyebrow">Manager queue</p><h2>Decisions to review</h2></div><span class="badge badge-dark">Svetlana only</span></div>
-          <div class="queue-item"><div><strong>S02 · Drunk University Friends</strong><p>€2,000 · proposed 0 / 50 / 50%</p></div><button class="text-button">Review</button></div>
-          <div class="queue-item"><div><strong>E02 · Taxi for the grandmother</strong><p>€80 · proposed Project B</p></div><button class="text-button">Review</button></div>
-          <div class="empty-note">Approvals update the existing record, the dashboard, and its Google Sheets row.</div>
+          <div id="reviewQueue" class="empty-note">Loading manager queue…</div>
         </div>
       </section>
 
       <section class="panel table-panel">
-        <div class="panel-heading"><div><p class="eyebrow">Records</p><h2>Recent transactions</h2></div><span class="muted">Demo records until Supabase is connected</span></div>
-        <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Type</th><th>Submitted by</th><th>Amount</th><th>Status</th><th>Sync</th></tr></thead><tbody id="records"><tr><td>S01</td><td>Sale · Project A</td><td>Richard</td><td>€1,000.00</td><td><span class="status approved">Approved</span></td><td><span class="status synced">Synced</span></td></tr><tr><td>S02</td><td>Sale · Project B</td><td>Anastasia</td><td>€2,000.00</td><td><span class="status pending">Pending approval</span></td><td><span class="status synced">Synced</span></td></tr><tr><td>E01</td><td>Expense · Project A</td><td>Kevin</td><td>€120.00</td><td><span class="status approved">Approved</span></td><td><span class="status synced">Synced</span></td></tr><tr><td>E02</td><td>Expense · Proposed B</td><td>Kevin</td><td>€80.00</td><td><span class="status pending">Awaiting allocation</span></td><td><span class="status synced">Synced</span></td></tr></tbody></table></div>
+        <div class="panel-heading"><div><p class="eyebrow">Records</p><h2>Recent transactions</h2></div><span class="muted">Live records from Supabase</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Type</th><th>Submitted by</th><th>Amount</th><th>Status</th><th>Sync</th></tr></thead><tbody id="records"><tr><td colspan="6">Loading records…</td></tr></tbody></table></div>
       </section>
 
       <footer><span>Links for submission: <a href="#">Telegram bot</a> · <a href="#">Google Sheets</a> · <a href="#">GitHub repository</a></span><span>Credentials stay server-side.</span></footer>
