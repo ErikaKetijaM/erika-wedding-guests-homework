@@ -39,6 +39,15 @@ export default async function handler(request, response) {
     await telegram(chatId, `Sale ${row.reference} recorded: €${amount.toFixed(2)}, Project ${project}, Pending approval.`);
     return response.status(200).json({ok:true});
   }
+  if (text.startsWith('/expense ')) {
+    if (!employee || employee.role !== 'expense_reporter') { await telegram(chatId, 'Only Kevin can submit expenses.'); return response.status(200).json({ ok: true }); }
+    const [reference, description, category, amountText, allocation] = text.slice(9).split('|').map(x => x.trim()); const amount = Number(amountText); const map = { A:'A', B:'B', overhead:'overhead' };
+    if (!reference || !description || !['Materials','Travel','Other'].includes(category) || amount <= 0 || !map[allocation]) { await telegram(chatId, 'Use: /expense REF|Description|Materials, Travel, or Other|Amount|A, B, or overhead'); return response.status(200).json({ ok:true }); }
+    const user = (await api(`employees?telegram_user_id=eq.${message.from.id}&select=id`).then(x=>x.json()))[0]; const automatic = allocation === 'overhead';
+    const saved = await api('transactions', { method:'POST', headers:{Prefer:'return=representation'}, body:JSON.stringify({reference:reference.toUpperCase(),kind:'expense',submitted_by:user.id,originating_chat_id:chatId,description,amount,category,proposed_allocation:map[allocation],final_allocation:automatic?'overhead':null,status:automatic?'approved':'awaiting_allocation'}) });
+    if (!saved.ok) { await telegram(chatId, saved.status===409?'That reference already exists.':'The expense could not be saved.'); return response.status(200).json({ok:true}); }
+    await telegram(chatId, `Expense ${reference.toUpperCase()} recorded: €${amount.toFixed(2)}, ${automatic?'Company overhead.':'Awaiting allocation.'}`); return response.status(200).json({ok:true});
+  }
   await telegram(chatId, 'Use /start to check your account link. Transaction submission will be enabled shortly.');
   return response.status(200).json({ ok: true });
 }
