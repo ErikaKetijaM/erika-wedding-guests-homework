@@ -78,5 +78,14 @@ document.querySelector('#approveButton').addEventListener('click', async () => {
   if (response.ok) await loadDashboard();
 });
 
+document.querySelector('#syncSheetsButton').addEventListener('click', async () => {
+  const message = document.querySelector('#approvalMessage');
+  message.textContent = 'Syncing records…';
+  const response = await fetch('/api/sync-sheets', { method: 'POST', headers: { 'x-manager-passcode': document.querySelector('#managerPasscode').value } });
+  const data = await response.json();
+  message.textContent = response.ok ? `${data.synced} record(s) synced to Google Sheets.` : (data.error || `${data.failed || 0} record(s) could not be synced.`);
+  await loadDashboard();
+});
+
 setType('sale');
 loadDashboard().catch((error) => { document.querySelector('#integrationStatus').textContent = `Dashboard unavailable: ${error.message}`; });
