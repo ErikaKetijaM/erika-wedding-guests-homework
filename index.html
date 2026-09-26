@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Friends Included transaction and finance workspace" />
+    <title>Friends Included Finance Workspace</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Friends Included Ltd</p>
+          <h1>Finance workspace</h1>
+          <p class="muted">Wedding guests for hire · all friendships expire at checkout.</p>
+        </div>
+        <label class="role-picker">Demonstration role
+          <select id="roleSelect">
+            <option>Svetlana</option>
+            <option>Richard</option>
+            <option>Anastasia</option>
+            <option>Jean-Claude</option>
+            <option>Kevin</option>
+          </select>
+        </label>
+      </header>
+
+      <section class="status-strip" aria-label="Integration status">
+        <span><i class="dot dot-warn"></i> Demo data mode</span>
+        <span>Supabase: not connected</span>
+        <span>Telegram: not connected</span>
+        <span>Google Sheets: not connected</span>
+      </section>
+
+      <section class="metric-grid" aria-label="Financial overview">
+        <article class="metric"><span>Company result</span><strong id="companyResult">€2,400.00</strong><small>Approved sales less all expenses</small></article>
+        <article class="metric"><span>Approved income</span><strong>€3,000.00</strong><small>€1,000 Project A · €2,000 Project B</small></article>
+        <article class="metric"><span>Commission earned</span><strong>€300.00</strong><small>Richard €90 · Anastasia €110 · Jean-Claude €100</small></article>
+        <article class="metric"><span>Pending decisions</span><strong>2</strong><small>1 sale · 1 expense allocation</small></article>
+      </section>
+
+      <section class="workspace-grid">
+        <div class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">New record</p><h2>Submit a transaction</h2></div><span class="badge">Shared rules</span></div>
+          <div class="tabs" role="tablist"><button class="tab active" data-type="sale">Sale</button><button class="tab" data-type="expense">Expense</button></div>
+          <form id="transactionForm">
+            <div class="form-grid">
+              <label>Reference<input id="reference" required placeholder="S03 or E04" /></label>
+              <label>Amount (€)<input id="amount" required type="number" min="0.01" step="0.01" placeholder="1500.00" /></label>
+              <label class="wide">Description<input id="description" required placeholder="Describe the service or expense" /></label>
+              <label id="customerField">Customer<input id="customer" placeholder="Customer name" /></label>
+              <label id="projectField">Project<select id="project"><option>A · Respectable Relatives</option><option>B · Drunk University Friends</option></select></label>
+              <label id="categoryField" class="hidden">Category<select id="category"><option>Materials</option><option>Travel</option><option>Other</option></select></label>
+              <label id="allocationField" class="hidden">Proposed allocation<select id="allocation"><option>Project A</option><option>Project B</option><option>Company overhead</option></select></label>
+            </div>
+            <fieldset id="splitField"><legend>Proposed commission split</legend><div class="split-grid"><label>Richard %<input value="40" type="number" min="0" max="100" /></label><label>Anastasia %<input value="40" type="number" min="0" max="100" /></label><label>Jean-Claude %<input value="20" type="number" min="0" max="100" /></label></div><small>Shares must total 100% before submission.</small></fieldset>
+            <button class="primary" type="submit">Save transaction</button>
+            <p id="formMessage" class="form-message" role="status"></p>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">Manager queue</p><h2>Decisions to review</h2></div><span class="badge badge-dark">Svetlana only</span></div>
+          <div class="queue-item"><div><strong>S02 · Drunk University Friends</strong><p>€2,000 · proposed 0 / 50 / 50%</p></div><button class="text-button">Review</button></div>
+          <div class="queue-item"><div><strong>E02 · Taxi for the grandmother</strong><p>€80 · proposed Project B</p></div><button class="text-button">Review</button></div>
+          <div class="empty-note">Approvals update the existing record, the dashboard, and its Google Sheets row.</div>
+        </div>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Records</p><h2>Recent transactions</h2></div><span class="muted">Demo records until Supabase is connected</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Type</th><th>Submitted by</th><th>Amount</th><th>Status</th><th>Sync</th></tr></thead><tbody id="records"><tr><td>S01</td><td>Sale · Project A</td><td>Richard</td><td>€1,000.00</td><td><span class="status approved">Approved</span></td><td><span class="status synced">Synced</span></td></tr><tr><td>S02</td><td>Sale · Project B</td><td>Anastasia</td><td>€2,000.00</td><td><span class="status pending">Pending approval</span></td><td><span class="status synced">Synced</span></td></tr><tr><td>E01</td><td>Expense · Project A</td><td>Kevin</td><td>€120.00</td><td><span class="status approved">Approved</span></td><td><span class="status synced">Synced</span></td></tr><tr><td>E02</td><td>Expense · Proposed B</td><td>Kevin</td><td>€80.00</td><td><span class="status pending">Awaiting allocation</span></td><td><span class="status synced">Synced</span></td></tr></tbody></table></div>
+      </section>
+
+      <footer><span>Links for submission: <a href="#">Telegram bot</a> · <a href="#">Google Sheets</a> · <a href="#">GitHub repository</a></span><span>Credentials stay server-side.</span></footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
