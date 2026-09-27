@@ -1,6 +1,6 @@
 import { setSyncStatus, syncTransaction } from './sheets.js';
 import { notifyTransaction } from './notifications.js';
-import { requireSession } from './auth.js';
+import { requireSession } from '../lib/auth.js';
 
 function commissionAmounts(amount, split) {
   const poolCents = Math.round(Number(amount) * 10);

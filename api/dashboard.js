@@ -1,5 +1,5 @@
 const money = (value) => Number(value || 0);
-import { requireSession } from './auth.js';
+import { requireSession } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   const url = process.env.SUPABASE_URL;

@@ -1,4 +1,4 @@
-import { authIsConfigured, issueSession, validRole, verifyAccessCode } from './auth.js';
+import { authIsConfigured, issueSession, validRole, verifyAccessCode } from '../lib/auth.js';
 
 export default function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
