@@ -30,11 +30,21 @@ function typeLabel(item) {
 }
 
 async function loadDashboard() {
-  const response = await fetch('/api/dashboard', { cache: 'no-store' });
+  const response = await fetch(`/api/dashboard?role=${encodeURIComponent(state.role)}`, { cache: 'no-store' });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || 'Could not load the dashboard.');
-  const { metrics, transactions } = data;
+  const { metrics, transactions, viewer } = data;
   document.querySelector('#integrationStatus').innerHTML = `<span><i class="dot"></i> Live Supabase data</span><span>Telegram: connected</span><span>Google Sheets: ${data.integrations.googleSheets ? 'connected' : 'not connected'}</span>`;
+  const financialSections = document.querySelectorAll('#dashboard .metric-grid, #dashboard .table-panel');
+  financialSections.forEach((section) => section.classList.toggle('hidden', !viewer.canViewFinancials));
+  document.querySelector('#reviewQueue').closest('.queue-panel').classList.toggle('hidden', !viewer.canViewFinancials);
+  document.querySelector('.manager-panel').classList.toggle('hidden', !viewer.canViewFinancials);
+  if (!viewer.canViewFinancials) document.querySelector('#dashboard .hero-card p:not(.eyebrow)').textContent = 'Your private submission view. Only Svetlana can access company financial results.';
+  else document.querySelector('#dashboard .hero-card p:not(.eyebrow)').textContent = 'A curated financial overview for the company’s most memorable occasions.';
+  if (!metrics) {
+    document.querySelector('#records').innerHTML = transactions.map((item) => `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td>${item.kind === 'sale' ? `Project ${item.project}` : `${item.final_allocation ? 'Final' : 'Proposed'} ${item.final_allocation || item.proposed_allocation}`}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : item.sheets_sync_status === 'failed' ? 'Sync failed' : 'Sync pending'}</span></td><td><span class="status ${item.notification_status === 'sent' ? 'synced' : 'pending'}">${item.notification_status}</span></td></tr>`).join('') || '<tr><td colspan="8">No transactions yet.</td></tr>';
+    return;
+  }
   document.querySelector('#companyResult').textContent = euro(metrics.companyResult);
   document.querySelector('#companyResultNote').textContent = `Project A ${euro(metrics.projectAResult)} · Project B ${euro(metrics.projectBResult)}`;
   document.querySelector('#approvedIncome').textContent = euro(metrics.income);
@@ -56,14 +66,14 @@ async function loadDashboard() {
   document.querySelector('#breakdownResultB').textContent = euro(metrics.projectBResult);
   document.querySelector('#breakdownResultCompany').textContent = euro(metrics.companyResult);
   document.querySelector('#companyCostNote').textContent = `Company overhead: ${euro(metrics.overhead)} · Awaiting allocation: ${euro(metrics.awaitingExpenseAmount)}`;
-  document.querySelector('#records').innerHTML = transactions.map((item) => `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : 'Sync pending'}</span></td></tr>`).join('') || '<tr><td colspan="6">No transactions yet.</td></tr>';
+  document.querySelector('#records').innerHTML = transactions.map((item) => `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td>${item.kind === 'sale' ? `Project ${item.project}` : `${item.final_allocation ? 'Final' : 'Proposed'} ${item.final_allocation || item.proposed_allocation}`}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : item.sheets_sync_status === 'failed' ? 'Sync failed' : 'Sync pending'}</span></td><td><span class="status ${item.notification_status === 'sent' ? 'synced' : 'pending'}">${item.notification_status}</span></td></tr>`).join('') || '<tr><td colspan="8">No transactions yet.</td></tr>';
   const queue = transactions.filter((item) => item.status !== 'approved');
   document.querySelector('#reviewQueue').innerHTML = queue.length ? queue.map((item) => `<div class="queue-item"><div><strong>${item.reference} · ${item.description}</strong><p>${euro(item.amount)} · ${titleStatus(item.status)}</p></div><button class="text-button" data-reference="${item.reference}">Review</button></div>`).join('') : '<div class="empty-note">Nothing is waiting for a manager decision.</div>';
   document.querySelectorAll('[data-reference]').forEach((button) => button.addEventListener('click', () => { document.querySelector('#approvalReference').value = button.dataset.reference; document.querySelector('#approvalReference').focus(); }));
 }
 
 tabs.forEach((tab) => tab.addEventListener('click', () => setType(tab.dataset.type)));
-document.querySelector('#roleSelect').addEventListener('change', (event) => { state.role = event.target.value; message.textContent = `${state.role} selected.`; });
+document.querySelector('#roleSelect').addEventListener('change', async (event) => { state.role = event.target.value; message.textContent = `${state.role} selected.`; await loadDashboard(); });
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
