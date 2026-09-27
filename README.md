@@ -12,7 +12,7 @@ Day 4 homework application by **Ērika Ketija Muižniece**.
 
 ## Demonstration role
 
-The selector is intentionally labelled **Demonstration role**. It controls the demonstration view and allowed form type; production identity should be replaced with real sign-in before using this app with real people.
+The selector is intentionally labelled **Demonstration role** so an instructor can open the public link and inspect every permitted view without needing an access code. It controls the classroom demonstration view and allowed form type; this is not intended as real-world staff authentication.
 
 ## Useful checks
 
@@ -30,8 +30,6 @@ Never commit bot tokens, API keys, service-account JSON, or a populated `.env` f
 - `GOOGLE_SHEET_ID`
 - `GOOGLE_SERVICE_ACCOUNT_JSON`
 - `MANAGER_PASSCODE`
-- `DEMO_ACCESS_CODES_JSON` — one distinct code for each role, for example `{"Svetlana":"...","Richard":"...","Anastasia":"...","Jean-Claude":"...","Kevin":"..."}`
-- `SESSION_SIGNING_SECRET` — a long random value used to sign eight-hour role sessions
 
 ## Database
 

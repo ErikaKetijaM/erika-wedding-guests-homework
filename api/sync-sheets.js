@@ -1,11 +1,7 @@
 import { refreshHeaders, setSyncStatus, syncTransaction } from './sheets.js';
-import { requireSession } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const session = requireSession(req, res);
-  if (!session) return;
-  if (session.role !== 'Svetlana') return res.status(403).json({ error: 'Manager authorization required.' });
   if (req.headers['x-manager-passcode'] !== process.env.MANAGER_PASSCODE) return res.status(403).json({ error: 'Manager authorization required.' });
   const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };

@@ -1,5 +1,4 @@
-const state = { type: 'sale', role: sessionStorage.getItem('friendsIncludedRole') || '', session: sessionStorage.getItem('friendsIncludedSession') || '' };
-const authHeaders = () => state.session ? { 'x-demo-session': state.session } : {};
+const state = { type: 'sale', role: 'Svetlana' };
 const tabs = document.querySelectorAll('.tab');
 const customerField = document.querySelector('#customerField');
 const projectField = document.querySelector('#projectField');
@@ -31,9 +30,8 @@ function typeLabel(item) {
 }
 
 async function loadDashboard() {
-  const response = await fetch('/api/dashboard', { cache: 'no-store', headers: authHeaders() });
+  const response = await fetch(`/api/dashboard?role=${encodeURIComponent(state.role)}`, { cache: 'no-store' });
   const data = await response.json();
-  if (response.status === 401) return showLogin(data.error);
   if (!response.ok) throw new Error(data.error || 'Could not load the dashboard.');
   const { metrics, transactions, viewer } = data;
   document.querySelector('#integrationStatus').innerHTML = `<span><i class="dot"></i> Live Supabase data</span><span>Telegram: connected</span><span>Google Sheets: ${data.integrations.googleSheets ? 'connected' : 'not connected'}</span>`;
@@ -75,7 +73,7 @@ async function loadDashboard() {
 }
 
 tabs.forEach((tab) => tab.addEventListener('click', () => setType(tab.dataset.type)));
-document.querySelector('#roleSelect').addEventListener('change', () => { document.querySelector('#roleSelect').value = state.role; });
+document.querySelector('#roleSelect').addEventListener('change', async (event) => { state.role = event.target.value; message.textContent = `${state.role} selected.`; await loadDashboard(); });
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -88,8 +86,8 @@ form.addEventListener('submit', async (event) => {
     if (split !== 100) return message.textContent = `Commission shares must total 100%. Current total: ${split}%.`;
   }
   try {
-    const body = state.type === 'sale' ? { kind: 'sale', reference, description, amount, customer: document.querySelector('#customer').value, project: document.querySelector('#project').value.startsWith('A') ? 'A' : 'B', r: Number(splitField.querySelectorAll('input')[0].value), a: Number(splitField.querySelectorAll('input')[1].value), j: Number(splitField.querySelectorAll('input')[2].value) } : { kind: 'expense', reference, description, amount, category: document.querySelector('#category').value, allocation: document.querySelector('#allocation').value === 'Company overhead' ? 'overhead' : document.querySelector('#allocation').value.endsWith('A') ? 'A' : 'B' };
-    const saved = await fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
+    const body = state.type === 'sale' ? { kind: 'sale', role: state.role, reference, description, amount, customer: document.querySelector('#customer').value, project: document.querySelector('#project').value.startsWith('A') ? 'A' : 'B', r: Number(splitField.querySelectorAll('input')[0].value), a: Number(splitField.querySelectorAll('input')[1].value), j: Number(splitField.querySelectorAll('input')[2].value) } : { kind: 'expense', role: state.role, reference, description, amount, category: document.querySelector('#category').value, allocation: document.querySelector('#allocation').value === 'Company overhead' ? 'overhead' : document.querySelector('#allocation').value.endsWith('A') ? 'A' : 'B' };
+    const saved = await fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await saved.json();
     message.textContent = saved.ok ? `${reference} saved successfully.` : (data.error || 'Could not save transaction.');
     if (saved.ok) { form.reset(); setType(state.type); await loadDashboard(); }
@@ -97,7 +95,7 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.querySelector('#approveButton').addEventListener('click', async () => {
-  const response = await fetch('/api/approve', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-manager-passcode': document.querySelector('#managerPasscode').value, ...authHeaders() }, body: JSON.stringify({ reference: document.querySelector('#approvalReference').value, decision: document.querySelector('#managerDecision').value }) });
+  const response = await fetch('/api/approve', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-manager-passcode': document.querySelector('#managerPasscode').value }, body: JSON.stringify({ reference: document.querySelector('#approvalReference').value, role: document.querySelector('#roleSelect').value, decision: document.querySelector('#managerDecision').value }) });
   const data = await response.json();
   document.querySelector('#approvalMessage').textContent = response.ok ? (data.alreadyApproved ? 'This record is already approved.' : 'Decision saved successfully.') : (data.error || 'Could not save decision.');
   if (response.ok) await loadDashboard();
@@ -106,7 +104,7 @@ document.querySelector('#approveButton').addEventListener('click', async () => {
 document.querySelector('#syncSheetsButton').addEventListener('click', async () => {
   const message = document.querySelector('#approvalMessage');
   message.textContent = 'Syncing records…';
-  const response = await fetch('/api/sync-sheets', { method: 'POST', headers: { 'x-manager-passcode': document.querySelector('#managerPasscode').value, ...authHeaders() } });
+  const response = await fetch('/api/sync-sheets', { method: 'POST', headers: { 'x-manager-passcode': document.querySelector('#managerPasscode').value } });
   const data = await response.json();
   message.textContent = response.ok ? `${data.synced} record(s) synced to Google Sheets.` : (data.error || `${data.failed || 0} record(s) could not be synced.`);
   await loadDashboard();
@@ -123,18 +121,4 @@ document.querySelectorAll('[data-view]').forEach((control) => control.addEventLi
 }));
 
 setType('sale');
-function showLogin(reason = '') { document.querySelector('#authGate').classList.remove('hidden'); document.querySelector('#loginMessage').textContent = reason; }
-document.querySelector('#loginForm').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const role = document.querySelector('#loginRole').value;
-  const loginMessage = document.querySelector('#loginMessage');
-  const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role, code: document.querySelector('#loginCode').value }) });
-  const data = await response.json();
-  if (!response.ok) { loginMessage.textContent = data.error || 'Could not sign in.'; return; }
-  state.role = data.role; state.session = data.session;
-  sessionStorage.setItem('friendsIncludedRole', state.role); sessionStorage.setItem('friendsIncludedSession', state.session);
-  document.querySelector('#roleSelect').value = state.role;
-  document.querySelector('#authGate').classList.add('hidden');
-  await loadDashboard();
-});
-if (state.session) { document.querySelector('#roleSelect').value = state.role; loadDashboard().catch((error) => showLogin(error.message)); } else showLogin();
+loadDashboard().catch((error) => { document.querySelector('#integrationStatus').textContent = `Dashboard unavailable: ${error.message}`; });
