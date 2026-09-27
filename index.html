@@ -13,9 +13,19 @@
       :root{font-family:"DM Sans",Inter,system-ui,sans-serif}
       h1,h2,.brand b,.brand-mark,.hero-seal b{font-family:"Cormorant Garamond",Georgia,serif}
       .brand b{font-size:1.35rem}.brand-mark{font-size:1.5rem}.hero-card h2{font-size:clamp(2.15rem,3vw,3.1rem)}.hero-seal b{font-size:3.6rem;line-height:.9}
+      .auth-gate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:22px;background:radial-gradient(circle at top right,#2f7969,#082f29 63%)}.auth-gate.hidden{display:none}.login-card{width:min(100%,440px);display:grid;gap:14px;padding:36px;background:#fffaf0;border:1px solid #e5cd9c;border-radius:18px;box-shadow:0 25px 70px rgba(0,0,0,.28)}.login-card>p:not(.eyebrow){color:#53695f;font-size:.9rem}.login-card .brand-mark{margin-bottom:5px}.login-card .primary{margin-top:3px}
     </style>
   </head>
   <body>
+    <section class="auth-gate" id="authGate" aria-label="Demonstration sign in">
+      <form id="loginForm" class="login-card">
+        <span class="brand-mark">F</span><p class="eyebrow">Friends Included Ltd</p><h1>Enter the private office</h1>
+        <p>Choose your demonstration identity and enter its private access code.</p>
+        <label>Demonstration role<select id="loginRole"><option>Svetlana</option><option>Richard</option><option>Anastasia</option><option>Jean-Claude</option><option>Kevin</option></select></label>
+        <label>Access code<input id="loginCode" type="password" required autocomplete="current-password" /></label>
+        <button class="primary" type="submit">Enter workspace</button><p id="loginMessage" class="form-message" role="status"></p>
+      </form>
+    </section>
     <main class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="#dashboard" data-view="dashboard"><span class="brand-mark">F</span><span><b>Friends Included</b><small>Private finance office</small></span></a>

@@ -30,6 +30,8 @@ Never commit bot tokens, API keys, service-account JSON, or a populated `.env` f
 - `GOOGLE_SHEET_ID`
 - `GOOGLE_SERVICE_ACCOUNT_JSON`
 - `MANAGER_PASSCODE`
+- `DEMO_ACCESS_CODES_JSON` — one distinct code for each role, for example `{"Svetlana":"...","Richard":"...","Anastasia":"...","Jean-Claude":"...","Kevin":"..."}`
+- `SESSION_SIGNING_SECRET` — a long random value used to sign eight-hour role sessions
 
 ## Database
 

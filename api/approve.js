@@ -1,5 +1,6 @@
 import { setSyncStatus, syncTransaction } from './sheets.js';
 import { notifyTransaction } from './notifications.js';
+import { requireSession } from './auth.js';
 
 function commissionAmounts(amount, split) {
   const poolCents = Math.round(Number(amount) * 10);
@@ -12,8 +13,10 @@ function commissionAmounts(amount, split) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { reference, role, decision = '' } = req.body || {};
-  if (role !== 'Svetlana' || req.headers['x-manager-passcode'] !== process.env.MANAGER_PASSCODE) return res.status(403).json({ error: 'Manager authorization required.' });
+  const { reference, decision = '' } = req.body || {};
+  const session = requireSession(req, res);
+  if (!session) return;
+  if (session.role !== 'Svetlana' || req.headers['x-manager-passcode'] !== process.env.MANAGER_PASSCODE) return res.status(403).json({ error: 'Manager authorization required.' });
   const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
   const transaction = (await fetch(`${url}/rest/v1/transactions?reference=eq.${encodeURIComponent(reference)}&select=*`, { headers }).then((response) => response.json()))[0];

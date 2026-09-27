@@ -1,3 +1,5 @@
+import { authIsConfigured } from './auth.js';
+
 export default function handler(_request, response) {
   response.setHeader('Cache-Control', 'no-store, max-age=0');
   response.status(200).json({
@@ -10,6 +12,7 @@ export default function handler(_request, response) {
       googleSheets: Boolean(process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
       googleSheetIdConfigured: Boolean(process.env.GOOGLE_SHEET_ID),
       googleServiceAccountConfigured: Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+      roleAccessConfigured: authIsConfigured(),
     },
   });
 }

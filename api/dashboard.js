@@ -1,11 +1,13 @@
 const money = (value) => Number(value || 0);
-const knownRoles = new Set(['Svetlana', 'Richard', 'Anastasia', 'Jean-Claude', 'Kevin']);
+import { requireSession } from './auth.js';
 
 export default async function handler(req, res) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return res.status(503).json({ error: 'Database is not configured.' });
-  const viewerName = knownRoles.has(String(req.query?.role || 'Svetlana')) ? String(req.query?.role || 'Svetlana') : 'Svetlana';
+  const session = requireSession(req, res);
+  if (!session) return;
+  const viewerName = session.role;
   const headers = { apikey: key, Authorization: `Bearer ${key}` };
   const employeesResponse = await fetch(`${url}/rest/v1/employees?select=id,display_name,role`, { headers });
   const employees = await employeesResponse.json();
