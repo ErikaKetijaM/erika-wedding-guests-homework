@@ -40,6 +40,12 @@
         <article class="metric"><span>Pending decisions</span><strong id="pendingDecisions">—</strong><small id="pendingNote">Loading live records…</small></article>
       </section>
 
+      <section class="panel table-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Financial breakdown</p><h2>Approved project results</h2></div><span class="muted">Expenses awaiting allocation reduce only the company result</span></div>
+        <div class="table-wrap"><table><thead><tr><th></th><th>Project A</th><th>Project B</th><th>Company</th></tr></thead><tbody><tr><th>Approved income</th><td id="breakdownIncomeA">—</td><td id="breakdownIncomeB">—</td><td id="breakdownIncomeCompany">—</td></tr><tr><th>Commission expense</th><td id="breakdownCommissionA">—</td><td id="breakdownCommissionB">—</td><td id="breakdownCommissionCompany">—</td></tr><tr><th>Allocated expenses</th><td id="breakdownExpenseA">—</td><td id="breakdownExpenseB">—</td><td id="breakdownExpenseCompany">—</td></tr><tr><th>Result</th><td id="breakdownResultA">—</td><td id="breakdownResultB">—</td><td id="breakdownResultCompany">—</td></tr></tbody></table></div>
+        <p id="companyCostNote" class="form-message"></p>
+      </section>
+
       <section class="workspace-grid">
         <div class="panel"><div class="panel-heading"><div><p class="eyebrow">Manager setup</p><h2>Approve a record</h2></div></div><label>Manager passcode<input id="managerPasscode" type="password" /></label><label>Reference<input id="approvalReference" placeholder="S01 or E01" /></label><label>Final decision or commission split<input id="managerDecision" placeholder="Leave blank to approve proposal" /></label><button class="primary" id="approveButton" type="button">Approve decision</button><button class="text-button" id="syncSheetsButton" type="button">Sync all records to Google Sheets</button><p id="approvalMessage" class="form-message"></p></div>
         <div class="panel">

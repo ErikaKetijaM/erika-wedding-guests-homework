@@ -10,6 +10,8 @@ export default async function handler(_req, res) {
   const approved = transactions.filter((item) => item.status === 'approved');
   const approvedSales = approved.filter((item) => item.kind === 'sale');
   const expenses = transactions.filter((item) => item.kind === 'expense');
+  const employees = await fetch(`${url}/rest/v1/employees?select=id,display_name`, { headers: { apikey: key, Authorization: `Bearer ${key}` } }).then((response) => response.json());
+  const names = new Map(employees.map((employee) => [employee.id, employee.display_name]));
   const total = (items) => items.reduce((sum, item) => sum + money(item.amount), 0);
   const commission = (item) => money(item.richard_commission) + money(item.anastasia_commission) + money(item.jean_claude_commission);
   const projectSales = (project) => approvedSales.filter((item) => item.project === project);
@@ -20,7 +22,6 @@ export default async function handler(_req, res) {
   const commissionB = salesB.reduce((sum, item) => sum + commission(item), 0);
   const allCommission = approvedSales.reduce((sum, item) => sum + commission(item), 0);
   res.status(200).json({
-    transactions,
     integrations: { googleSheets: Boolean(process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_JSON) },
     metrics: {
       income: incomeA + incomeB, incomeA, incomeB, commission: allCommission,
@@ -32,8 +33,13 @@ export default async function handler(_req, res) {
       companyResult: incomeA + incomeB - allCommission - total(expenses),
       projectAResult: incomeA - commissionA - total(projectExpenses('A')),
       projectBResult: incomeB - commissionB - total(projectExpenses('B')),
+      expenseA: total(projectExpenses('A')),
+      expenseB: total(projectExpenses('B')),
+      overhead: total(approved.filter((item) => item.kind === 'expense' && item.final_allocation === 'overhead')),
+      awaitingExpenseAmount: total(expenses.filter((item) => item.status === 'awaiting_allocation')),
       pendingSales: transactions.filter((item) => item.kind === 'sale' && item.status === 'pending_approval').length,
       awaitingAllocation: transactions.filter((item) => item.kind === 'expense' && item.status === 'awaiting_allocation').length
-    }
+    },
+    transactions: transactions.map((item) => ({ ...item, submitted_by_name: names.get(item.submitted_by) || 'Unknown' }))
   });
 }
