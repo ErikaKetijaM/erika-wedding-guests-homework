@@ -35,7 +35,7 @@ function notificationLabel(status) {
 
 function recordsHtml(transactions, canRetryNotifications) {
   return transactions.map((item) => {
-    const retry = canRetryNotifications && item.notification_status === 'failed' ? ` <button class="text-button" data-retry-reference="${item.reference}" type="button">Retry</button>` : '';
+    const retry = canRetryNotifications && ['failed', 'not_applicable'].includes(item.notification_status) ? ` <button class="text-button" data-retry-reference="${item.reference}" type="button">Retry</button>` : '';
     return `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td>${item.kind === 'sale' ? `Project ${item.project}` : `${item.final_allocation ? 'Final' : 'Proposed'} ${item.final_allocation || item.proposed_allocation}`}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : item.sheets_sync_status === 'failed' ? 'Sync failed' : 'Sync pending'}</span></td><td><span class="status ${item.notification_status === 'sent' ? 'synced' : 'pending'}">${notificationLabel(item.notification_status)}</span>${retry}</td></tr>`;
   }).join('') || '<tr><td colspan="8">No transactions yet.</td></tr>';
 }
@@ -105,7 +105,11 @@ function showManagerReview(reference) {
   document.querySelector('#managerReviewDetail').textContent = `${proposalText(item)} Final decision: ${item.status === 'approved' ? 'approved' : 'not decided yet'}.`;
   document.querySelector('#retryReference').value = item.reference;
   document.querySelector('#retryEventType').value = item.notification_event_type || 'submission';
-  document.querySelector('#retryNotificationPanel').classList.toggle('hidden', item.notification_status !== 'failed');
+  const canRetryNotification = ['failed', 'not_applicable'].includes(item.notification_status);
+  document.querySelector('#retryNotificationPanel').classList.toggle('hidden', !canRetryNotification);
+  document.querySelector('#retryNotificationPanel .form-message').textContent = item.notification_status === 'not_applicable'
+    ? 'No Telegram recipient is saved yet. After restoring the original chat ID, send this notification without changing the transaction.'
+    : 'Telegram delivery failed. Retry without changing this transaction.';
   document.querySelector('#approvalReference').focus();
 }
 
