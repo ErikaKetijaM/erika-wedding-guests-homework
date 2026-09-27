@@ -60,6 +60,22 @@ export async function refreshHeaders() {
   await ensureTabs();
 }
 
+export async function inspectSheets() {
+  if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON) throw new Error('Google Sheets credentials are not configured.');
+  const spreadsheet = await google('?fields=sheets.properties');
+  const tabs = spreadsheet.sheets.map((sheet) => sheet.properties.title);
+  const result = { tabs, sales: null, expenses: null };
+  for (const [key, tab] of [['sales', 'Sales'], ['expenses', 'Expenses']]) {
+    if (!tabs.includes(tab)) continue;
+    const [header, rows] = await Promise.all([
+      google(`/values/${encodeURIComponent(`${tab}!1:1`)}`),
+      google(`/values/${encodeURIComponent(`${tab}!A2:A`)}`)
+    ]);
+    result[key] = { headers: header.values?.[0] || [], rowCount: (rows.values || []).filter((row) => row[0]).length };
+  }
+  return result;
+}
+
 export async function setSyncStatus(transactionId, status, error = null) {
   const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   await fetch(`${url}/rest/v1/transactions?id=eq.${encodeURIComponent(transactionId)}`, { method: 'PATCH', headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ sheets_sync_status: status, sheets_sync_error: error }) });
