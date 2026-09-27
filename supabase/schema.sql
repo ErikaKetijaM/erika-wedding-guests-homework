@@ -82,9 +82,19 @@ create table public.notification_deliveries (
   unique(transaction_id, event_type)
 );
 
+-- A separate, fictional-only mapping used by the public instructor test page.
+-- It never changes the Telegram link on a real employee.
+create table public.telegram_test_links (
+  telegram_user_id bigint primary key,
+  chat_id bigint not null,
+  created_at timestamptz not null default now()
+);
+
 alter table public.employees enable row level security;
 alter table public.transactions enable row level security;
 alter table public.notification_deliveries enable row level security;
+alter table public.telegram_test_links enable row level security;
 
 -- The deployed server uses the service-role key. Browser clients do not directly access records.
 revoke all on public.employees, public.transactions, public.notification_deliveries from anon, authenticated;
+revoke all on public.telegram_test_links from anon, authenticated;

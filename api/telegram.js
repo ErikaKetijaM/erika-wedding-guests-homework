@@ -19,8 +19,13 @@ export default async function handler(request, response) {
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.TELEGRAM_BOT_TOKEN) {
     return response.status(500).json({ error: 'Bot is not configured' });
   }
-  const users = await api(`employees?telegram_user_id=eq.${message.from.id}&select=display_name,role`);
-  const employee = (await users.json())[0];
+  const users = await api(`employees?telegram_user_id=eq.${message.from.id}&select=id,display_name,role`);
+  const normalEmployee = (await users.json())[0];
+  const testLinksResponse = await api(`telegram_test_links?telegram_user_id=eq.${message.from.id}&select=telegram_user_id`);
+  const testLinks = await testLinksResponse.json();
+  const testLinked = Array.isArray(testLinks) && testLinks.length > 0;
+  const testEmployee = testLinked ? (await api('employees?display_name=eq.Test%20Telegram%20Salesperson&select=id,display_name,role').then((item) => item.json()))[0] : null;
+  const employee = testEmployee || normalEmployee;
   if (text === '/start') {
     const greeting = employee
       ? `Hello ${employee.display_name}. You are linked as ${employee.role}. Your Telegram user ID is ${message.from.id}; this chat ID is ${chatId}. Sales: /sale REF|Customer|A or B|Description|Amount|Richard%|Anastasia%|Jean-Claude%. Expenses: /expense REF|Description|Materials, Travel, or Other|Amount|A, B, or overhead.`
@@ -34,7 +39,7 @@ export default async function handler(request, response) {
     const [reference, customer, project, description, amountText, rText, aText, jText] = p;
     const amount = Number(amountText), r = Number(rText), a = Number(aText), j = Number(jText);
     if (p.length !== 8 || !reference || !customer || !['A','B'].includes(project) || !description || amount <= 0 || r < 0 || a < 0 || j < 0 || r + a + j !== 100) { await telegram(chatId, 'Use: /sale REF|Customer|A or B|Description|Amount|Richard%|Anastasia%|Jean-Claude%'); return response.status(200).json({ ok: true }); }
-    const row = { reference: reference.toUpperCase(), kind: 'sale', submitted_by: (await api(`employees?telegram_user_id=eq.${message.from.id}&select=id`).then(x=>x.json()))[0].id, originating_chat_id: chatId, customer, project, description, amount, proposed_richard_pct:r, proposed_anastasia_pct:a, proposed_jean_claude_pct:j, status:'pending_approval' };
+    const row = { reference: reference.toUpperCase(), kind: 'sale', submitted_by: employee.id, originating_chat_id: chatId, customer, project, description, amount, proposed_richard_pct:r, proposed_anastasia_pct:a, proposed_jean_claude_pct:j, status:'pending_approval' };
     const saved = await api('transactions', { method:'POST', headers:{ Prefer:'return=representation' }, body:JSON.stringify(row) });
     if (!saved.ok) { await telegram(chatId, saved.status === 409 ? 'That reference already exists.' : 'The sale could not be saved.'); return response.status(200).json({ok:true}); }
     const record = (await saved.json())[0];
@@ -46,8 +51,8 @@ export default async function handler(request, response) {
     if (!employee || employee.role !== 'expense_reporter') { await telegram(chatId, 'Only Kevin can submit expenses.'); return response.status(200).json({ ok: true }); }
     const [reference, description, category, amountText, allocation] = text.slice(9).split('|').map(x => x.trim()); const amount = Number(amountText); const map = { A:'A', B:'B', overhead:'overhead' };
     if (!reference || !description || !['Materials','Travel','Other'].includes(category) || amount <= 0 || !map[allocation]) { await telegram(chatId, 'Use: /expense REF|Description|Materials, Travel, or Other|Amount|A, B, or overhead'); return response.status(200).json({ ok:true }); }
-    const user = (await api(`employees?telegram_user_id=eq.${message.from.id}&select=id`).then(x=>x.json()))[0]; const automatic = allocation === 'overhead';
-    const saved = await api('transactions', { method:'POST', headers:{Prefer:'return=representation'}, body:JSON.stringify({reference:reference.toUpperCase(),kind:'expense',submitted_by:user.id,originating_chat_id:chatId,description,amount,category,proposed_allocation:map[allocation],final_allocation:automatic?'overhead':null,status:automatic?'approved':'awaiting_allocation'}) });
+    const automatic = allocation === 'overhead';
+    const saved = await api('transactions', { method:'POST', headers:{Prefer:'return=representation'}, body:JSON.stringify({reference:reference.toUpperCase(),kind:'expense',submitted_by:employee.id,originating_chat_id:chatId,description,amount,category,proposed_allocation:map[allocation],final_allocation:automatic?'overhead':null,status:automatic?'approved':'awaiting_allocation'}) });
     if (!saved.ok) { await telegram(chatId, saved.status===409?'That reference already exists.':'The expense could not be saved.'); return response.status(200).json({ok:true}); }
     const record = (await saved.json())[0];
     try { await syncTransaction(record, employee.display_name); await setSyncStatus(record.id, 'synced'); } catch (error) { await setSyncStatus(record.id, 'failed', error.message); }
