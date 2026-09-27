@@ -8,6 +8,7 @@ const splitField = document.querySelector('#splitField');
 const form = document.querySelector('#transactionForm');
 const message = document.querySelector('#formMessage');
 const euro = (number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(Number(number || 0));
+if (![...document.querySelector('#category').options].some((option) => option.value === 'Other')) document.querySelector('#category').add(new Option('Other', 'Other'));
 
 function setType(type) {
   state.type = type;
@@ -140,6 +141,15 @@ document.querySelector('#approveButton').addEventListener('click', async () => {
   const data = await response.json();
   document.querySelector('#approvalMessage').textContent = response.ok ? (data.alreadyApproved ? 'This record is already approved.' : 'Decision saved successfully.') : (data.error || 'Could not save decision.');
   if (response.ok) { state.dashboardCache = {}; await loadDashboard(true); }
+});
+
+document.querySelector('#loadManagerRecord').addEventListener('click', () => {
+  const reference = document.querySelector('#approvalReference').value.trim().toUpperCase();
+  if (!state.transactions.some((item) => item.reference === reference)) {
+    document.querySelector('#approvalMessage').textContent = 'That record is not available in the current ledger.';
+    return;
+  }
+  showManagerReview(reference);
 });
 
 document.querySelector('#syncSheetsButton').addEventListener('click', async () => {
