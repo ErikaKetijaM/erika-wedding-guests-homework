@@ -1,4 +1,4 @@
-const state = { type: 'sale', role: 'Svetlana', transactions: [] };
+const state = { type: 'sale', role: 'Svetlana', transactions: [], dashboardCache: {} };
 const tabs = document.querySelectorAll('.tab');
 const customerField = document.querySelector('#customerField');
 const projectField = document.querySelector('#projectField');
@@ -29,10 +29,14 @@ function typeLabel(item) {
   return `Expense · ${item.final_allocation || `Proposed ${item.proposed_allocation}`}`;
 }
 
-async function loadDashboard() {
-  const response = await fetch(`/api/dashboard?role=${encodeURIComponent(state.role)}`, { cache: 'no-store' });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Could not load the dashboard.');
+async function loadDashboard(force = false) {
+  let data = !force ? state.dashboardCache[state.role] : null;
+  if (!data) {
+    const response = await fetch(`/api/dashboard?role=${encodeURIComponent(state.role)}`, { cache: 'no-store' });
+    data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not load the dashboard.');
+    state.dashboardCache[state.role] = data;
+  }
   const { metrics, transactions, viewer } = data;
   state.transactions = transactions;
   document.querySelector('#integrationStatus').innerHTML = `<span><i class="dot"></i> Live Supabase data</span><span>Telegram: connected</span><span>Google Sheets: ${data.integrations.googleSheets ? 'connected' : 'not connected'}</span>`;
@@ -108,7 +112,7 @@ form.addEventListener('submit', async (event) => {
     const saved = await fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await saved.json();
     message.textContent = saved.ok ? `${reference} saved successfully.` : (data.error || 'Could not save transaction.');
-    if (saved.ok) { form.reset(); setType(state.type); await loadDashboard(); }
+    if (saved.ok) { form.reset(); setType(state.type); state.dashboardCache = {}; await loadDashboard(true); }
   } catch { message.textContent = 'Could not reach the transaction service. Please try again.'; }
 });
 
@@ -116,7 +120,7 @@ document.querySelector('#approveButton').addEventListener('click', async () => {
   const response = await fetch('/api/approve', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-manager-passcode': document.querySelector('#managerPasscode').value }, body: JSON.stringify({ reference: document.querySelector('#approvalReference').value, role: document.querySelector('#roleSelect').value, decision: document.querySelector('#managerDecision').value }) });
   const data = await response.json();
   document.querySelector('#approvalMessage').textContent = response.ok ? (data.alreadyApproved ? 'This record is already approved.' : 'Decision saved successfully.') : (data.error || 'Could not save decision.');
-  if (response.ok) await loadDashboard();
+  if (response.ok) { state.dashboardCache = {}; await loadDashboard(true); }
 });
 
 document.querySelector('#syncSheetsButton').addEventListener('click', async () => {
@@ -125,7 +129,7 @@ document.querySelector('#syncSheetsButton').addEventListener('click', async () =
   const response = await fetch('/api/sync-sheets', { method: 'POST', headers: { 'x-manager-passcode': document.querySelector('#managerPasscode').value } });
   const data = await response.json();
   message.textContent = response.ok ? `${data.synced} record(s) synced to Google Sheets.` : (data.error || `${data.failed || 0} record(s) could not be synced.`);
-  await loadDashboard();
+  state.dashboardCache = {}; await loadDashboard(true);
 });
 
 const managerDecisionField = document.querySelector('#managerDecision');
@@ -143,7 +147,7 @@ document.querySelector('#retryNotificationButton').addEventListener('click', asy
   const response = await fetch('/api/retry-notification', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-manager-passcode': document.querySelector('#managerPasscode').value }, body: JSON.stringify({ reference: document.querySelector('#retryReference').value, eventType: document.querySelector('#retryEventType').value }) });
   const result = await response.json();
   document.querySelector('#approvalMessage').textContent = response.ok ? `Telegram retry: ${result.status}.` : (result.error || 'Could not retry the Telegram notification.');
-  if (response.ok) await loadDashboard();
+  if (response.ok) { state.dashboardCache = {}; await loadDashboard(true); }
 });
 
 const viewTitles = { dashboard: 'At a glance', workspace: 'The workroom', records: 'The ledger', guide: 'House guide' };
