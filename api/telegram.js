@@ -23,7 +23,7 @@ export default async function handler(request, response) {
   const employee = (await users.json())[0];
   if (text === '/start') {
     const greeting = employee
-      ? `Hello ${employee.display_name}. You are linked as ${employee.role}. Sales: /sale REF|Customer|A or B|Description|Amount|Richard%|Anastasia%|Jean-Claude%. Expenses: /expense REF|Description|Materials, Travel, or Other|Amount|A, B, or overhead.`
+      ? `Hello ${employee.display_name}. You are linked as ${employee.role}. Your Telegram user ID is ${message.from.id}; this chat ID is ${chatId}. Sales: /sale REF|Customer|A or B|Description|Amount|Richard%|Anastasia%|Jean-Claude%. Expenses: /expense REF|Description|Materials, Travel, or Other|Amount|A, B, or overhead.`
       : `Welcome to Friends Included Finance. Your account is not linked yet. Your Telegram user ID is ${message.from.id}; this chat ID is ${chatId}. Copy both numbers into the website’s “Test this system” page to link the fictional test salesperson.`;
     await telegram(chatId, greeting);
     return response.status(200).json({ ok: true });
