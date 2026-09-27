@@ -6,6 +6,7 @@
     <meta name="description" content="Friends Included transaction and finance workspace" />
     <title>Friends Included Finance Workspace</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>.author-line{margin-top:10px;color:#7c4e2d;font-size:.8rem;font-weight:700}.instructions-panel ol{margin:0;padding-left:20px;color:#66716d}.instructions-panel li+li{margin-top:8px}</style>
   </head>
   <body>
     <main class="shell">
@@ -14,6 +15,7 @@
           <p class="eyebrow">Friends Included Ltd</p>
           <h1>Finance workspace</h1>
           <p class="muted">Wedding guests for hire · all friendships expire at checkout.</p>
+          <p class="author-line">Built by Erika Ketija Muižniece</p>
         </div>
         <label class="role-picker">Demonstration role
           <select id="roleSelect">
@@ -78,7 +80,16 @@
         <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Type</th><th>Submitted by</th><th>Amount</th><th>Status</th><th>Sync</th></tr></thead><tbody id="records"><tr><td colspan="6">Loading records…</td></tr></tbody></table></div>
       </section>
 
-      <footer><span>Links for submission: <a href="#">Telegram bot</a> · <a href="#">Google Sheets</a> · <a href="#">GitHub repository</a></span><span>Credentials stay server-side.</span></footer>
+      <section class="panel instructions-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Submission guide</p><h2>How to use this app</h2></div></div>
+        <ol>
+          <li>Select a demonstration role and submit a sale or expense with a unique reference.</li>
+          <li>Svetlana approves pending records and can adjust a commission split or expense allocation.</li>
+          <li>Each change is saved in Supabase, sent to the linked Telegram account when available, and synchronized to Google Sheets.</li>
+        </ol>
+      </section>
+
+      <footer><span>Links for submission: <a href="https://t.me/Erika_wedding_guests_Bot" target="_blank" rel="noreferrer">Telegram bot</a> · <a href="https://docs.google.com/spreadsheets/d/1VGqOz6e5-iGUMI2CtFKx_gEQD5yW7PD0hjZOurTNG6s/edit?usp=sharing" target="_blank" rel="noreferrer">Google Sheets</a> · <a href="https://github.com/ErikaKetijaM/erika-wedding-guests-homework" target="_blank" rel="noreferrer">GitHub repository</a></span><span>Credentials stay server-side.</span></footer>
     </main>
     <script src="app.js"></script>
   </body>
