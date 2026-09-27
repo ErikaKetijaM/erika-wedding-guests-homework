@@ -2,6 +2,7 @@ const api = (path, options = {}) => fetch(`${process.env.SUPABASE_URL}/rest/v1/$
   ...options,
   headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', ...(options.headers || {}) },
 });
+import { setSyncStatus, syncTransaction } from './sheets.js';
 
 async function telegram(chatId, text) {
   return fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -36,6 +37,8 @@ export default async function handler(request, response) {
     const row = { reference: reference.toUpperCase(), kind: 'sale', submitted_by: (await api(`employees?telegram_user_id=eq.${message.from.id}&select=id`).then(x=>x.json()))[0].id, originating_chat_id: chatId, customer, project, description, amount, proposed_richard_pct:r, proposed_anastasia_pct:a, proposed_jean_claude_pct:j, status:'pending_approval' };
     const saved = await api('transactions', { method:'POST', headers:{ Prefer:'return=representation' }, body:JSON.stringify(row) });
     if (!saved.ok) { await telegram(chatId, saved.status === 409 ? 'That reference already exists.' : 'The sale could not be saved.'); return response.status(200).json({ok:true}); }
+    const record = (await saved.json())[0];
+    try { await syncTransaction(record, employee.display_name); await setSyncStatus(record.id, 'synced'); } catch (error) { await setSyncStatus(record.id, 'failed', error.message); }
     await telegram(chatId, `Sale ${row.reference} recorded: €${amount.toFixed(2)}, Project ${project}, Pending approval.`);
     return response.status(200).json({ok:true});
   }
@@ -46,6 +49,8 @@ export default async function handler(request, response) {
     const user = (await api(`employees?telegram_user_id=eq.${message.from.id}&select=id`).then(x=>x.json()))[0]; const automatic = allocation === 'overhead';
     const saved = await api('transactions', { method:'POST', headers:{Prefer:'return=representation'}, body:JSON.stringify({reference:reference.toUpperCase(),kind:'expense',submitted_by:user.id,originating_chat_id:chatId,description,amount,category,proposed_allocation:map[allocation],final_allocation:automatic?'overhead':null,status:automatic?'approved':'awaiting_allocation'}) });
     if (!saved.ok) { await telegram(chatId, saved.status===409?'That reference already exists.':'The expense could not be saved.'); return response.status(200).json({ok:true}); }
+    const record = (await saved.json())[0];
+    try { await syncTransaction(record, employee.display_name); await setSyncStatus(record.id, 'synced'); } catch (error) { await setSyncStatus(record.id, 'failed', error.message); }
     await telegram(chatId, `Expense ${reference.toUpperCase()} recorded: €${amount.toFixed(2)}, ${automatic?'Company overhead.':'Awaiting allocation.'}`); return response.status(200).json({ok:true});
   }
   await telegram(chatId, 'Use /start to check your account link. Transaction submission will be enabled shortly.');

@@ -1,4 +1,5 @@
 import { setSyncStatus, syncTransaction } from './sheets.js';
+import { notifyTransaction } from './notifications.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -14,5 +15,6 @@ export default async function handler(req, res) {
   const saved = await created.json();
   if (!created.ok) return res.status(400).json({ error: saved.message || 'Could not save transaction.' });
   try { await syncTransaction(saved[0], body.role); await setSyncStatus(saved[0].id, 'synced'); } catch (error) { await setSyncStatus(saved[0].id, 'failed', error.message); }
+  await notifyTransaction(saved[0], 'submission', `${saved[0].reference} was submitted on the website and is ${saved[0].status === 'approved' ? 'approved' : 'waiting for Svetlana’s decision'}.`);
   return res.status(201).json({ ok: true });
 }
