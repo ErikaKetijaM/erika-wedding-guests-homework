@@ -9,6 +9,7 @@
     <style>
       :root{background:radial-gradient(circle at 5% 0%,#e4efe8 0,transparent 30rem),#f5f6f2}
       .shell{max-width:1280px;padding-top:52px}.topbar{margin-bottom:26px}h1{font-size:clamp(2.25rem,4.8vw,4.15rem);line-height:.95}.author-line{margin-top:13px;color:#94512d;font-size:.8rem;font-weight:800}.status-strip{border-radius:14px;background:rgba(239,245,239,.85)}.metric,.panel{border-radius:18px;box-shadow:0 14px 34px rgba(31,53,42,.055)}.metric{position:relative;overflow:hidden;padding:20px}.metric:before{content:"";position:absolute;left:0;top:0;width:100%;height:4px;background:#3f725d}.metric:nth-child(2):before{background:#b86d3b}.metric:nth-child(3):before{background:#668293}.metric:nth-child(4):before{background:#b9863f}.metric strong{font-size:1.92rem}.workspace-grid{gap:20px}.panel{padding:24px}.primary{box-shadow:0 5px 13px rgba(36,72,59,.17);transition:transform .15s,background .15s}.primary:hover{transform:translateY(-1px)}.queue-item:first-child{border-top:0}.table-wrap{border:1px solid #edf1ed;border-radius:12px}table{background:#fff}th{background:#f5f8f5}tbody tr:hover{background:#f8faf7}.instructions-panel{margin-bottom:20px}.instructions-panel ol{margin:0;padding-left:20px;color:#607069}.instructions-panel li+li{margin-top:9px}footer{padding:6px 2px}a{text-underline-offset:3px}@media(max-width:520px){.shell{padding:30px 16px}.panel{padding:19px}}
+      :root{background:#f4f0e6;color:#183d35}.shell{max-width:1320px}.topbar{padding:30px 34px;background:linear-gradient(125deg,#083c35,#125548 58%,#1d6655);border-radius:26px;box-shadow:0 22px 46px rgba(8,60,53,.18)}.topbar h1{color:#fff;font-family:Georgia,"Times New Roman",serif;letter-spacing:-.045em}.topbar .eyebrow{color:#eac67d}.topbar .muted{color:#d8e5dc}.topbar .author-line{color:#f2d995}.role-picker{background:rgba(255,255,255,.1);border:1px solid rgba(234,198,125,.45);border-radius:15px;padding:13px;color:#fff}.role-picker select{border:0;background:#fffaf0;color:#183d35}.site-nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 3px}.site-nav a{padding:8px 12px;border-radius:999px;background:#fffaf1;color:#285549;text-decoration:none;font-size:.76rem;border:1px solid #ded2b8}.status-strip{background:#fdfaf2;border-color:#e5d8bd}.metric,.panel{border-color:#e3d8c4;box-shadow:0 16px 36px rgba(48,70,56,.08)}.metric:before{background:#0b6254}.metric:nth-child(2):before{background:#bd8c35}.metric:nth-child(3):before{background:#a37e40}.metric:nth-child(4):before{background:#237260}.accordion{margin:0 0 20px;border:1px solid #e3d8c4;border-radius:18px;background:rgba(255,253,247,.9);box-shadow:0 16px 36px rgba(48,70,56,.06);overflow:hidden}.accordion summary{list-style:none;cursor:pointer;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;font-family:Georgia,"Times New Roman",serif;font-size:1.28rem;color:#164a40}.accordion summary::-webkit-details-marker{display:none}.accordion summary:after{content:'+';font-family:Inter,sans-serif;font-size:1.45rem;font-weight:300;color:#b58736}.accordion[open] summary{border-bottom:1px solid #eadfca}.accordion[open] summary:after{content:'−'}.accordion-body{padding:22px 24px 4px}.accordion .metric-grid{margin-bottom:18px}.accordion .table-panel{margin-bottom:18px}.accordion .panel{box-shadow:none;background:#fff}.primary{background:linear-gradient(135deg,#0b5c4e,#12483f)}.primary:hover{background:#0b5c4e}.badge{background:#f5e4bd;color:#704f16}.badge-dark{background:#0b5c4e}.table-wrap{border-color:#e9dec8}.instructions-panel{margin:0;border:0;box-shadow:none;background:transparent}.instructions-panel li::marker{color:#b58736;font-weight:800}footer{margin-top:20px}@media(max-width:650px){.topbar{padding:25px 22px}.accordion summary{padding:17px 19px}.accordion-body{padding:18px 16px 2px}}
     </style>
   </head>
   <body>
@@ -31,6 +32,10 @@
         </label>
       </header>
 
+      <nav class="site-nav" aria-label="Workspace sections">
+        <a href="#overview">Overview</a><a href="#workspace">Workspace</a><a href="#records">Records</a><a href="#instructions">How it works</a>
+      </nav>
+
       <section id="integrationStatus" class="status-strip" aria-label="Integration status">
         <span><i class="dot dot-warn"></i> Demo data mode</span>
         <span>Supabase: not connected</span>
@@ -38,6 +43,9 @@
         <span>Google Sheets: not connected</span>
       </section>
 
+      <details class="accordion" id="overview" open>
+        <summary>Financial overview</summary>
+        <div class="accordion-body">
       <section class="metric-grid" aria-label="Financial overview">
         <article class="metric"><span>Company result</span><strong id="companyResult">—</strong><small id="companyResultNote">Loading live records…</small></article>
         <article class="metric"><span>Approved income</span><strong id="approvedIncome">—</strong><small id="approvedIncomeNote">Loading live records…</small></article>
@@ -50,8 +58,12 @@
         <div class="table-wrap"><table><thead><tr><th></th><th>Project A</th><th>Project B</th><th>Company</th></tr></thead><tbody><tr><th>Approved income</th><td id="breakdownIncomeA">—</td><td id="breakdownIncomeB">—</td><td id="breakdownIncomeCompany">—</td></tr><tr><th>Commission expense</th><td id="breakdownCommissionA">—</td><td id="breakdownCommissionB">—</td><td id="breakdownCommissionCompany">—</td></tr><tr><th>Allocated expenses</th><td id="breakdownExpenseA">—</td><td id="breakdownExpenseB">—</td><td id="breakdownExpenseCompany">—</td></tr><tr><th>Result</th><td id="breakdownResultA">—</td><td id="breakdownResultB">—</td><td id="breakdownResultCompany">—</td></tr></tbody></table></div>
         <p id="companyCostNote" class="form-message"></p>
       </section>
+        </div>
+      </details>
 
-      <section class="workspace-grid">
+      <details class="accordion" id="workspace" open>
+        <summary>Workspace tools</summary>
+        <div class="accordion-body"><section class="workspace-grid">
         <div class="panel"><div class="panel-heading"><div><p class="eyebrow">Manager setup</p><h2>Approve a record</h2></div></div><label>Manager passcode<input id="managerPasscode" type="password" /></label><label>Reference<input id="approvalReference" placeholder="S01 or E01" /></label><label>Final decision or commission split<input id="managerDecision" placeholder="Leave blank to approve proposal" /></label><button class="primary" id="approveButton" type="button">Approve decision</button><button class="text-button" id="syncSheetsButton" type="button">Sync all records to Google Sheets</button><p id="approvalMessage" class="form-message"></p></div>
         <div class="panel">
           <div class="panel-heading"><div><p class="eyebrow">New record</p><h2>Submit a transaction</h2></div><span class="badge">Shared rules</span></div>
@@ -76,21 +88,28 @@
           <div class="panel-heading"><div><p class="eyebrow">Manager queue</p><h2>Decisions to review</h2></div><span class="badge badge-dark">Svetlana only</span></div>
           <div id="reviewQueue" class="empty-note">Loading manager queue…</div>
         </div>
-      </section>
+      </section></div>
+      </details>
 
-      <section class="panel table-panel">
+      <details class="accordion" id="records">
+        <summary>Recent transactions</summary>
+        <div class="accordion-body"><section class="panel table-panel">
         <div class="panel-heading"><div><p class="eyebrow">Records</p><h2>Recent transactions</h2></div><span class="muted">Live records from Supabase</span></div>
         <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Type</th><th>Submitted by</th><th>Amount</th><th>Status</th><th>Sync</th></tr></thead><tbody id="records"><tr><td colspan="6">Loading records…</td></tr></tbody></table></div>
-      </section>
+      </section></div>
+      </details>
 
-      <section class="panel instructions-panel">
+      <details class="accordion" id="instructions">
+        <summary>How it works</summary>
+        <div class="accordion-body"><section class="panel instructions-panel">
         <div class="panel-heading"><div><p class="eyebrow">Submission guide</p><h2>How to use this app</h2></div></div>
         <ol>
           <li>Select a demonstration role and submit a sale or expense with a unique reference.</li>
           <li>Svetlana approves pending records and can adjust a commission split or expense allocation.</li>
           <li>Each change is saved in Supabase, sent to the linked Telegram account when available, and synchronized to Google Sheets.</li>
         </ol>
-      </section>
+      </section></div>
+      </details>
 
       <footer><span>Links for submission: <a href="https://t.me/Erika_wedding_guests_Bot" target="_blank" rel="noreferrer">Telegram bot</a> · <a href="https://docs.google.com/spreadsheets/d/1VGqOz6e5-iGUMI2CtFKx_gEQD5yW7PD0hjZOurTNG6s/edit?usp=sharing" target="_blank" rel="noreferrer">Google Sheets</a> · <a href="https://github.com/ErikaKetijaM/erika-wedding-guests-homework" target="_blank" rel="noreferrer">GitHub repository</a></span><span>Credentials stay server-side.</span></footer>
     </main>
