@@ -1,4 +1,4 @@
-const state = { type: 'sale', role: 'Svetlana' };
+const state = { type: 'sale', role: 'Svetlana', transactions: [] };
 const tabs = document.querySelectorAll('.tab');
 const customerField = document.querySelector('#customerField');
 const projectField = document.querySelector('#projectField');
@@ -34,6 +34,7 @@ async function loadDashboard() {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || 'Could not load the dashboard.');
   const { metrics, transactions, viewer } = data;
+  state.transactions = transactions;
   document.querySelector('#integrationStatus').innerHTML = `<span><i class="dot"></i> Live Supabase data</span><span>Telegram: connected</span><span>Google Sheets: ${data.integrations.googleSheets ? 'connected' : 'not connected'}</span>`;
   const financialSections = document.querySelectorAll('#dashboard .metric-grid, #dashboard .table-panel');
   financialSections.forEach((section) => section.classList.toggle('hidden', !viewer.canViewFinancials));
@@ -68,8 +69,25 @@ async function loadDashboard() {
   document.querySelector('#companyCostNote').textContent = `Company overhead: ${euro(metrics.overhead)} · Awaiting allocation: ${euro(metrics.awaitingExpenseAmount)}`;
   document.querySelector('#recordsBody').innerHTML = transactions.map((item) => `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td>${item.kind === 'sale' ? `Project ${item.project}` : `${item.final_allocation ? 'Final' : 'Proposed'} ${item.final_allocation || item.proposed_allocation}`}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : item.sheets_sync_status === 'failed' ? 'Sync failed' : 'Sync pending'}</span></td><td><span class="status ${item.notification_status === 'sent' ? 'synced' : 'pending'}">${item.notification_status}</span></td></tr>`).join('') || '<tr><td colspan="8">No transactions yet.</td></tr>';
   const queue = transactions.filter((item) => item.status !== 'approved');
-  document.querySelector('#reviewQueue').innerHTML = queue.length ? queue.map((item) => `<div class="queue-item"><div><strong>${item.reference} · ${item.description}</strong><p>${euro(item.amount)} · ${titleStatus(item.status)}</p></div><button class="text-button" data-reference="${item.reference}">Review</button></div>`).join('') : '<div class="empty-note">Nothing is waiting for a manager decision.</div>';
-  document.querySelectorAll('[data-reference]').forEach((button) => button.addEventListener('click', () => { document.querySelector('#approvalReference').value = button.dataset.reference; document.querySelector('#approvalReference').focus(); }));
+  document.querySelector('#reviewQueue').innerHTML = queue.length ? queue.map((item) => `<div class="queue-item"><div><strong>${item.reference} · ${item.description}</strong><p>${euro(item.amount)} · ${titleStatus(item.status)}</p></div><button class="text-button" data-reference="${item.reference}">Review proposal</button></div>`).join('') : '<div class="empty-note">Nothing is waiting for a manager decision.</div>';
+  document.querySelectorAll('[data-reference]').forEach((button) => button.addEventListener('click', () => showManagerReview(button.dataset.reference)));
+}
+
+function proposalText(item) {
+  return item.kind === 'sale'
+    ? `Original proposal: Project ${item.project}; Richard ${item.proposed_richard_pct}% · Anastasia ${item.proposed_anastasia_pct}% · Jean-Claude ${item.proposed_jean_claude_pct}%.`
+    : `Original proposal: ${item.proposed_allocation === 'overhead' ? 'Company overhead' : `Project ${item.proposed_allocation}`}.`;
+}
+
+function showManagerReview(reference) {
+  const item = state.transactions.find((record) => record.reference === reference);
+  if (!item) return;
+  document.querySelector('#approvalReference').value = item.reference;
+  document.querySelector('#managerReviewDetail').textContent = `${proposalText(item)} Final decision: ${item.status === 'approved' ? 'approved' : 'not decided yet'}.`;
+  document.querySelector('#retryReference').value = item.reference;
+  document.querySelector('#retryEventType').value = item.notification_event_type || 'submission';
+  document.querySelector('#retryNotificationPanel').classList.toggle('hidden', item.notification_status !== 'failed');
+  document.querySelector('#approvalReference').focus();
 }
 
 tabs.forEach((tab) => tab.addEventListener('click', () => setType(tab.dataset.type)));
@@ -108,6 +126,24 @@ document.querySelector('#syncSheetsButton').addEventListener('click', async () =
   const data = await response.json();
   message.textContent = response.ok ? `${data.synced} record(s) synced to Google Sheets.` : (data.error || `${data.failed || 0} record(s) could not be synced.`);
   await loadDashboard();
+});
+
+const managerDecisionField = document.querySelector('#managerDecision');
+const managerReviewDetail = document.createElement('p');
+managerReviewDetail.id = 'managerReviewDetail';
+managerReviewDetail.className = 'form-message';
+managerReviewDetail.textContent = 'Choose “Review proposal” to inspect the original decision before approving.';
+managerDecisionField.parentElement.after(managerReviewDetail);
+const retryPanel = document.createElement('div');
+retryPanel.id = 'retryNotificationPanel';
+retryPanel.className = 'hidden';
+retryPanel.innerHTML = '<p class="form-message">Telegram delivery failed. Retry without changing this transaction.</p><input id="retryReference" type="hidden" /><input id="retryEventType" type="hidden" /><button class="text-button" id="retryNotificationButton" type="button">Retry Telegram notification</button>';
+document.querySelector('#approvalMessage').before(retryPanel);
+document.querySelector('#retryNotificationButton').addEventListener('click', async () => {
+  const response = await fetch('/api/retry-notification', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-manager-passcode': document.querySelector('#managerPasscode').value }, body: JSON.stringify({ reference: document.querySelector('#retryReference').value, eventType: document.querySelector('#retryEventType').value }) });
+  const result = await response.json();
+  document.querySelector('#approvalMessage').textContent = response.ok ? `Telegram retry: ${result.status}.` : (result.error || 'Could not retry the Telegram notification.');
+  if (response.ok) await loadDashboard();
 });
 
 const viewTitles = { dashboard: 'At a glance', workspace: 'The workroom', records: 'The ledger', guide: 'House guide' };
