@@ -100,5 +100,15 @@ document.querySelector('#syncSheetsButton').addEventListener('click', async () =
   await loadDashboard();
 });
 
+const viewTitles = { dashboard: 'At a glance', workspace: 'The workroom', records: 'The ledger', guide: 'House guide' };
+document.querySelectorAll('[data-view]').forEach((control) => control.addEventListener('click', (event) => {
+  event.preventDefault();
+  const view = control.dataset.view;
+  document.querySelectorAll('.app-view').forEach((section) => section.classList.toggle('active', section.id === view));
+  document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view));
+  document.querySelector('#viewTitle').textContent = viewTitles[view];
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}));
+
 setType('sale');
 loadDashboard().catch((error) => { document.querySelector('#integrationStatus').textContent = `Dashboard unavailable: ${error.message}`; });
