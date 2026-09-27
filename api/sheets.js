@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 
+const salesHeaders = ['Reference', 'Submission time', 'Salesperson', 'Customer', 'Project', 'Description', 'Amount', 'Proposed Richard %', 'Proposed Anastasia %', 'Proposed Jean-Claude %', 'Approved Richard %', 'Approved Anastasia %', 'Approved Jean-Claude %', 'Richard commission', 'Anastasia commission', 'Jean-Claude commission', 'Status'];
+const expenseHeaders = ['Reference', 'Submission time', 'Reporter', 'Description', 'Category', 'Amount', 'Proposed allocation', 'Final allocation', 'Status'];
 const base64url = (value) => Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url');
 
 async function googleAccessToken() {
@@ -22,25 +24,40 @@ async function google(path, options = {}) {
   return body;
 }
 
+async function writeHeaders() {
+  await google(`/values/${encodeURIComponent('Sales!A1:Q1')}?valueInputOption=RAW`, { method: 'PUT', body: JSON.stringify({ values: [salesHeaders] }) });
+  await google(`/values/${encodeURIComponent('Expenses!A1:N1')}?valueInputOption=RAW`, { method: 'PUT', body: JSON.stringify({ values: [[...expenseHeaders, '', '', '', '', '']] }) });
+}
+
 async function ensureTabs() {
   const sheet = await google('?fields=sheets.properties');
   const existing = new Set(sheet.sheets.map((item) => item.properties.title));
   const missing = ['Sales', 'Expenses'].filter((title) => !existing.has(title));
   if (missing.length) await google(':batchUpdate', { method: 'POST', body: JSON.stringify({ requests: missing.map((title) => ({ addSheet: { properties: { title } } })) }) });
-  for (const title of missing) await google(`/values/${encodeURIComponent(`${title}!A1:N1`)}?valueInputOption=RAW`, { method: 'PUT', body: JSON.stringify({ values: [['Reference', 'Submitted at', 'Submitted by', 'Customer', 'Description', 'Amount', 'Project', 'Category', 'Proposed allocation', 'Final allocation', 'Proposed split', 'Approved split', 'Commission split', 'Status']] }) });
+  await writeHeaders();
 }
 
-const value = (number) => Number(number || 0).toFixed(2);
+const amount = (value) => Number(value || 0).toFixed(2);
+const sheetInfo = (transaction, submittedByName) => transaction.kind === 'sale' ? {
+  tab: 'Sales', end: 'Q',
+  row: [transaction.reference, transaction.submitted_at || new Date().toISOString(), submittedByName, transaction.customer || '', transaction.project || '', transaction.description, Number(transaction.amount), transaction.proposed_richard_pct, transaction.proposed_anastasia_pct, transaction.proposed_jean_claude_pct, transaction.approved_richard_pct ?? '', transaction.approved_anastasia_pct ?? '', transaction.approved_jean_claude_pct ?? '', transaction.status === 'approved' ? amount(transaction.richard_commission) : '0.00', transaction.status === 'approved' ? amount(transaction.anastasia_commission) : '0.00', transaction.status === 'approved' ? amount(transaction.jean_claude_commission) : '0.00', transaction.status]
+} : {
+  tab: 'Expenses', end: 'I',
+  row: [transaction.reference, transaction.submitted_at || new Date().toISOString(), submittedByName, transaction.description, transaction.category || '', Number(transaction.amount), transaction.proposed_allocation || '', transaction.final_allocation || '', transaction.status]
+};
 
 export async function syncTransaction(transaction, submittedByName = transaction.submitted_by) {
   if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON) throw new Error('Google Sheets credentials are not configured.');
   await ensureTabs();
-  const tab = transaction.kind === 'sale' ? 'Sales' : 'Expenses';
+  const { tab, end, row } = sheetInfo(transaction, submittedByName);
   const current = await google(`/values/${encodeURIComponent(`${tab}!A2:A`)}`);
-  const rowNumber = (current.values || []).findIndex((row) => row[0] === transaction.reference) + 2;
-  const row = [[transaction.reference, transaction.submitted_at || new Date().toISOString(), submittedByName, transaction.customer || '', transaction.description, Number(transaction.amount), transaction.project || '', transaction.category || '', transaction.proposed_allocation || '', transaction.final_allocation || '', transaction.kind === 'sale' ? `${transaction.proposed_richard_pct}/${transaction.proposed_anastasia_pct}/${transaction.proposed_jean_claude_pct}` : '', transaction.kind === 'sale' ? `${transaction.approved_richard_pct ?? ''}/${transaction.approved_anastasia_pct ?? ''}/${transaction.approved_jean_claude_pct ?? ''}` : '', transaction.kind === 'sale' ? `${value(transaction.richard_commission)}/${value(transaction.anastasia_commission)}/${value(transaction.jean_claude_commission)}` : '', transaction.status]];
-  if (rowNumber > 1) await google(`/values/${encodeURIComponent(`${tab}!A${rowNumber}:N${rowNumber}`)}?valueInputOption=RAW`, { method: 'PUT', body: JSON.stringify({ values: row }) });
-  else await google(`/values/${encodeURIComponent(`${tab}!A:N`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, { method: 'POST', body: JSON.stringify({ values: row }) });
+  const rowNumber = (current.values || []).findIndex((item) => item[0] === transaction.reference) + 2;
+  if (rowNumber > 1) await google(`/values/${encodeURIComponent(`${tab}!A${rowNumber}:${end}${rowNumber}`)}?valueInputOption=RAW`, { method: 'PUT', body: JSON.stringify({ values: [row] }) });
+  else await google(`/values/${encodeURIComponent(`${tab}!A:${end}`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, { method: 'POST', body: JSON.stringify({ values: [row] }) });
+}
+
+export async function refreshHeaders() {
+  await ensureTabs();
 }
 
 export async function setSyncStatus(transactionId, status, error = null) {

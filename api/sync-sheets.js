@@ -1,4 +1,4 @@
-import { setSyncStatus, syncTransaction } from './sheets.js';
+import { refreshHeaders, setSyncStatus, syncTransaction } from './sheets.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -9,6 +9,7 @@ export default async function handler(req, res) {
   const employees = await fetch(`${url}/rest/v1/employees?select=id,display_name`, { headers }).then((response) => response.json());
   const names = new Map(employees.map((employee) => [employee.id, employee.display_name]));
   let synced = 0, failed = 0;
+  try { await refreshHeaders(); } catch (error) { return res.status(502).json({ ok: false, synced, failed: transactions.length, error: error.message }); }
   for (const transaction of transactions) {
     try { await syncTransaction(transaction, names.get(transaction.submitted_by)); await setSyncStatus(transaction.id, 'synced'); synced += 1; }
     catch (error) { await setSyncStatus(transaction.id, 'failed', error.message); failed += 1; }

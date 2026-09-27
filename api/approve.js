@@ -26,7 +26,12 @@ export default async function handler(req, res) {
   if (!savedResponse.ok) return res.status(502).json({ error: saved.message || 'Could not save decision.' });
   const employee = (await fetch(`${url}/rest/v1/employees?id=eq.${encodeURIComponent(transaction.submitted_by)}&select=display_name`, { headers }).then((response) => response.json()))[0];
   try { await syncTransaction(saved[0], employee?.display_name); await setSyncStatus(saved[0].id, 'synced'); } catch (error) { await setSyncStatus(saved[0].id, 'failed', error.message); }
-  const updateText = saved[0].kind === 'sale' ? `${saved[0].reference} was approved. Final commission split: Richard ${saved[0].approved_richard_pct}%, Anastasia ${saved[0].approved_anastasia_pct}%, Jean-Claude ${saved[0].approved_jean_claude_pct}%.` : `${saved[0].reference} was approved. Final allocation: ${saved[0].final_allocation === 'overhead' ? 'Company overhead' : `Project ${saved[0].final_allocation}`}.`;
+  const projectName = (value) => value === 'overhead' ? 'Company overhead' : `Project ${value}`;
+  const updateText = saved[0].kind === 'sale' ? (() => {
+    const changed = saved[0].proposed_richard_pct !== saved[0].approved_richard_pct || saved[0].proposed_anastasia_pct !== saved[0].approved_anastasia_pct || saved[0].proposed_jean_claude_pct !== saved[0].approved_jean_claude_pct;
+    const totalCommission = (Number(saved[0].richard_commission) + Number(saved[0].anastasia_commission) + Number(saved[0].jean_claude_commission)).toFixed(2);
+    return `Sale ${saved[0].reference} approved — commission split ${changed ? 'changed' : 'confirmed'}. Sale €${Number(saved[0].amount).toFixed(2)}; total commission €${totalCommission}. Richard: ${saved[0].proposed_richard_pct}% → ${saved[0].approved_richard_pct}% (€${Number(saved[0].richard_commission).toFixed(2)}). Anastasia: ${saved[0].proposed_anastasia_pct}% → ${saved[0].approved_anastasia_pct}% (€${Number(saved[0].anastasia_commission).toFixed(2)}). Jean-Claude: ${saved[0].proposed_jean_claude_pct}% → ${saved[0].approved_jean_claude_pct}% (€${Number(saved[0].jean_claude_commission).toFixed(2)}).`;
+  })() : `Expense ${saved[0].reference} — allocation ${saved[0].proposed_allocation === saved[0].final_allocation ? 'confirmed' : 'changed'}. €${Number(saved[0].amount).toFixed(2)}: ${saved[0].description}. Proposed: ${projectName(saved[0].proposed_allocation)}. Approved: ${projectName(saved[0].final_allocation)}.`;
   await notifyTransaction(saved[0], saved[0].kind === 'sale' ? 'sale_approval' : 'expense_allocation', updateText);
   return res.status(200).json({ ok: true });
 }
