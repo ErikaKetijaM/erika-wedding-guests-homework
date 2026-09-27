@@ -29,12 +29,35 @@ async function writeHeaders() {
   await google(`/values/${encodeURIComponent('Expenses!A1:N1')}?valueInputOption=RAW`, { method: 'PUT', body: JSON.stringify({ values: [[...expenseHeaders, '', '', '', '', '']] }) });
 }
 
+async function styleTabs() {
+  const spreadsheet = await google('?fields=sheets.properties');
+  const sheets = Object.fromEntries(spreadsheet.sheets.map((sheet) => [sheet.properties.title, sheet.properties.sheetId]));
+  const header = (sheetId, columns, color) => ({ repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: columns }, cell: { userEnteredFormat: { backgroundColor: color, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }, horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', wrapStrategy: 'WRAP' } }, fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)' } });
+  const widths = (sheetId, values) => values.map((pixelSize, index) => ({ updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: index, endIndex: index + 1 }, properties: { pixelSize }, fields: 'pixelSize' } }));
+  const sheetSetup = (title, columns, color, columnWidths) => {
+    const sheetId = sheets[title];
+    if (sheetId === undefined) return [];
+    return [
+      { updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 1 }, tabColor: color }, fields: 'gridProperties.frozenRowCount,tabColor' } },
+      header(sheetId, columns, color),
+      ...widths(sheetId, columnWidths),
+      { setBasicFilter: { filter: { range: { sheetId, startRowIndex: 0, endRowIndex: 1000, startColumnIndex: 0, endColumnIndex: columns } } } }
+    ];
+  };
+  const requests = [
+    ...sheetSetup('Sales', 17, { red: 0.13, green: 0.32, blue: 0.27 }, [100, 155, 125, 145, 80, 290, 95, 115, 115, 120, 115, 115, 120, 120, 125, 130, 135]),
+    ...sheetSetup('Expenses', 9, { red: 0.53, green: 0.28, blue: 0.16 }, [100, 155, 120, 310, 105, 100, 150, 135, 145])
+  ];
+  if (requests.length) await google(':batchUpdate', { method: 'POST', body: JSON.stringify({ requests }) });
+}
+
 async function ensureTabs() {
   const sheet = await google('?fields=sheets.properties');
   const existing = new Set(sheet.sheets.map((item) => item.properties.title));
   const missing = ['Sales', 'Expenses'].filter((title) => !existing.has(title));
   if (missing.length) await google(':batchUpdate', { method: 'POST', body: JSON.stringify({ requests: missing.map((title) => ({ addSheet: { properties: { title } } })) }) });
   await writeHeaders();
+  await styleTabs();
 }
 
 const amount = (value) => Number(value || 0).toFixed(2);
