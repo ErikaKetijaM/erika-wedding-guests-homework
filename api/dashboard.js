@@ -20,9 +20,11 @@ export default async function handler(req, res) {
   const latestDelivery = new Map();
   for (const delivery of deliveries) if (!latestDelivery.has(delivery.transaction_id)) latestDelivery.set(delivery.transaction_id, delivery);
   const names = new Map(employees.map((employee) => [employee.id, employee.display_name]));
-  const approved = transactions.filter((item) => item.status === 'approved');
+  const testEmployee = employees.find((employee) => employee.display_name === 'Test Telegram Salesperson');
+  const homeworkTransactions = transactions.filter((item) => item.submitted_by !== testEmployee?.id);
+  const approved = homeworkTransactions.filter((item) => item.status === 'approved');
   const approvedSales = approved.filter((item) => item.kind === 'sale');
-  const expenses = transactions.filter((item) => item.kind === 'expense');
+  const expenses = homeworkTransactions.filter((item) => item.kind === 'expense');
   const total = (items) => items.reduce((sum, item) => sum + money(item.amount), 0);
   const commission = (item) => money(item.richard_commission) + money(item.anastasia_commission) + money(item.jean_claude_commission);
   const projectSales = (project) => approvedSales.filter((item) => item.project === project);
@@ -38,7 +40,7 @@ export default async function handler(req, res) {
     metrics: canViewFinancials ? {
       income: incomeA + incomeB, incomeA, incomeB, commission: allCommission,
       commissionByPerson: { Richard: approvedSales.reduce((sum, item) => sum + money(item.richard_commission), 0), Anastasia: approvedSales.reduce((sum, item) => sum + money(item.anastasia_commission), 0), 'Jean-Claude': approvedSales.reduce((sum, item) => sum + money(item.jean_claude_commission), 0) },
-      companyResult: incomeA + incomeB - allCommission - total(expenses), projectAResult: incomeA - commissionA - total(projectExpenses('A')), projectBResult: incomeB - commissionB - total(projectExpenses('B')), expenseA: total(projectExpenses('A')), expenseB: total(projectExpenses('B')), overhead: total(approved.filter((item) => item.kind === 'expense' && item.final_allocation === 'overhead')), awaitingExpenseAmount: total(expenses.filter((item) => item.status === 'awaiting_allocation')), pendingSales: transactions.filter((item) => item.kind === 'sale' && item.status === 'pending_approval').length, awaitingAllocation: transactions.filter((item) => item.kind === 'expense' && item.status === 'awaiting_allocation').length
+      companyResult: incomeA + incomeB - allCommission - total(expenses), projectAResult: incomeA - commissionA - total(projectExpenses('A')), projectBResult: incomeB - commissionB - total(projectExpenses('B')), expenseA: total(projectExpenses('A')), expenseB: total(projectExpenses('B')), overhead: total(approved.filter((item) => item.kind === 'expense' && item.final_allocation === 'overhead')), awaitingExpenseAmount: total(expenses.filter((item) => item.status === 'awaiting_allocation')), pendingSales: homeworkTransactions.filter((item) => item.kind === 'sale' && item.status === 'pending_approval').length, awaitingAllocation: homeworkTransactions.filter((item) => item.kind === 'expense' && item.status === 'awaiting_allocation').length
     } : null,
     transactions: transactions.map((item) => ({ ...item, submitted_by_name: names.get(item.submitted_by) || 'Unknown', notification_status: latestDelivery.get(item.id)?.status || 'not_applicable', notification_event_type: latestDelivery.get(item.id)?.event_type || 'submission' }))
   });
