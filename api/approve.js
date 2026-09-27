@@ -1,6 +1,15 @@
 import { setSyncStatus, syncTransaction } from './sheets.js';
 import { notifyTransaction } from './notifications.js';
 
+function commissionAmounts(amount, split) {
+  const poolCents = Math.round(Number(amount) * 10);
+  const cents = split.map((percent) => Math.round(poolCents * percent / 100));
+  const difference = poolCents - cents.reduce((total, value) => total + value, 0);
+  const largestSplitIndex = split.reduce((best, value, index) => value > split[best] ? index : best, 0);
+  cents[largestSplitIndex] += difference;
+  return cents.map((value) => value / 100);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const { reference, role, decision = '' } = req.body || {};
@@ -15,7 +24,8 @@ export default async function handler(req, res) {
   if (transaction.kind === 'sale') {
     const split = decision ? decision.split('/').map(Number) : [transaction.proposed_richard_pct, transaction.proposed_anastasia_pct, transaction.proposed_jean_claude_pct];
     if (split.length !== 3 || split.some((number) => !Number.isFinite(number) || number < 0) || split[0] + split[1] + split[2] !== 100) return res.status(400).json({ error: 'Commission split must contain three percentages totaling 100.' });
-    update = { status: 'approved', approved_richard_pct: split[0], approved_anastasia_pct: split[1], approved_jean_claude_pct: split[2], richard_commission: +(transaction.amount * 0.1 * split[0] / 100).toFixed(2), anastasia_commission: +(transaction.amount * 0.1 * split[1] / 100).toFixed(2), jean_claude_commission: +(transaction.amount * 0.1 * split[2] / 100).toFixed(2), approved_at: new Date().toISOString(), approved_by: manager?.id || null };
+    const [richardCommission, anastasiaCommission, jeanClaudeCommission] = commissionAmounts(transaction.amount, split);
+    update = { status: 'approved', approved_richard_pct: split[0], approved_anastasia_pct: split[1], approved_jean_claude_pct: split[2], richard_commission: richardCommission, anastasia_commission: anastasiaCommission, jean_claude_commission: jeanClaudeCommission, approved_at: new Date().toISOString(), approved_by: manager?.id || null };
   } else {
     const allocation = decision || transaction.proposed_allocation;
     if (!['A', 'B', 'overhead'].includes(allocation)) return res.status(400).json({ error: 'Allocation must be A, B, or overhead.' });
