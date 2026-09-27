@@ -33,6 +33,10 @@ export default async function handler(request, response) {
     await telegram(chatId, greeting);
     return response.status(200).json({ ok: true });
   }
+  if (text === '/help') {
+    await telegram(chatId, 'Friends Included commands: /start shows your Telegram IDs and account link. Salespeople use /sale REF|Customer|A or B|Description|Amount|Richard%|Anastasia%|Jean-Claude%. Kevin uses /expense REF|Description|Materials, Travel, or Other|Amount|A, B, or overhead. Instructors can use the website’s Test this system page for a fictional test without a manager password.');
+    return response.status(200).json({ ok: true });
+  }
   if (text.startsWith('/sale ')) {
     if (!employee || employee.role !== 'salesperson') { await telegram(chatId, 'Only linked salespeople can submit sales.'); return response.status(200).json({ ok: true }); }
     const p = text.slice(6).split('|').map(x => x.trim());
