@@ -23,7 +23,7 @@ export default async function handler(request, response) {
   const employee = (await users.json())[0];
   if (text === '/start') {
     const greeting = employee
-      ? `Hello ${employee.display_name}. You are linked as ${employee.role}. Transaction commands will be enabled in the next release.`
+      ? `Hello ${employee.display_name}. You are linked as ${employee.role}. Sales: /sale REF|Customer|A or B|Description|Amount|Richard%|Anastasia%|Jean-Claude%. Expenses: /expense REF|Description|Materials, Travel, or Other|Amount|A, B, or overhead.`
       : 'Welcome to Friends Included Finance. Your Telegram account is not linked to an employee yet. Ask Svetlana to link it in manager setup.';
     await telegram(chatId, greeting);
     return response.status(200).json({ ok: true });
@@ -53,6 +53,6 @@ export default async function handler(request, response) {
     try { await syncTransaction(record, employee.display_name); await setSyncStatus(record.id, 'synced'); } catch (error) { await setSyncStatus(record.id, 'failed', error.message); }
     await telegram(chatId, `Expense ${reference.toUpperCase()} recorded: €${amount.toFixed(2)}, ${automatic?'Company overhead.':'Awaiting allocation.'}`); return response.status(200).json({ok:true});
   }
-  await telegram(chatId, 'Use /start to check your account link. Transaction submission will be enabled shortly.');
+  await telegram(chatId, 'Use /start to check your account link. Then use /sale or /expense to submit a transaction.');
   return response.status(200).json({ ok: true });
 }

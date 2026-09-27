@@ -29,6 +29,17 @@ function typeLabel(item) {
   return `Expense · ${item.final_allocation || `Proposed ${item.proposed_allocation}`}`;
 }
 
+function notificationLabel(status) {
+  return { sent: 'Sent', pending: 'Awaiting Telegram', failed: 'Telegram failed', not_applicable: 'No Telegram recipient linked' }[status] || 'Awaiting Telegram';
+}
+
+function recordsHtml(transactions, canRetryNotifications) {
+  return transactions.map((item) => {
+    const retry = canRetryNotifications && item.notification_status === 'failed' ? ` <button class="text-button" data-retry-reference="${item.reference}" type="button">Retry</button>` : '';
+    return `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td>${item.kind === 'sale' ? `Project ${item.project}` : `${item.final_allocation ? 'Final' : 'Proposed'} ${item.final_allocation || item.proposed_allocation}`}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : item.sheets_sync_status === 'failed' ? 'Sync failed' : 'Sync pending'}</span></td><td><span class="status ${item.notification_status === 'sent' ? 'synced' : 'pending'}">${notificationLabel(item.notification_status)}</span>${retry}</td></tr>`;
+  }).join('') || '<tr><td colspan="8">No transactions yet.</td></tr>';
+}
+
 async function loadDashboard(force = false) {
   let data = !force ? state.dashboardCache[state.role] : null;
   if (!data) {
@@ -47,7 +58,7 @@ async function loadDashboard(force = false) {
   if (!viewer.canViewFinancials) document.querySelector('#dashboard .hero-card p:not(.eyebrow)').textContent = 'Your private submission view. Only Svetlana can access company financial results.';
   else document.querySelector('#dashboard .hero-card p:not(.eyebrow)').textContent = 'A curated financial overview for the company’s most memorable occasions.';
   if (!metrics) {
-    document.querySelector('#recordsBody').innerHTML = transactions.map((item) => `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td>${item.kind === 'sale' ? `Project ${item.project}` : `${item.final_allocation ? 'Final' : 'Proposed'} ${item.final_allocation || item.proposed_allocation}`}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : item.sheets_sync_status === 'failed' ? 'Sync failed' : 'Sync pending'}</span></td><td><span class="status ${item.notification_status === 'sent' ? 'synced' : 'pending'}">${item.notification_status}</span></td></tr>`).join('') || '<tr><td colspan="8">No transactions yet.</td></tr>';
+    document.querySelector('#recordsBody').innerHTML = recordsHtml(transactions, false);
     return;
   }
   document.querySelector('#companyResult').textContent = euro(metrics.companyResult);
@@ -71,10 +82,14 @@ async function loadDashboard(force = false) {
   document.querySelector('#breakdownResultB').textContent = euro(metrics.projectBResult);
   document.querySelector('#breakdownResultCompany').textContent = euro(metrics.companyResult);
   document.querySelector('#companyCostNote').textContent = `Company overhead: ${euro(metrics.overhead)} · Awaiting allocation: ${euro(metrics.awaitingExpenseAmount)}`;
-  document.querySelector('#recordsBody').innerHTML = transactions.map((item) => `<tr><td>${item.reference}</td><td>${typeLabel(item)}</td><td>${item.submitted_by_name}</td><td>${euro(item.amount)}</td><td>${item.kind === 'sale' ? `Project ${item.project}` : `${item.final_allocation ? 'Final' : 'Proposed'} ${item.final_allocation || item.proposed_allocation}`}</td><td><span class="status ${item.status === 'approved' ? 'approved' : 'pending'}">${titleStatus(item.status)}</span></td><td><span class="status ${item.sheets_sync_status === 'synced' ? 'synced' : 'pending'}">${item.sheets_sync_status === 'synced' ? 'Synced' : item.sheets_sync_status === 'failed' ? 'Sync failed' : 'Sync pending'}</span></td><td><span class="status ${item.notification_status === 'sent' ? 'synced' : 'pending'}">${item.notification_status}</span></td></tr>`).join('') || '<tr><td colspan="8">No transactions yet.</td></tr>';
+  document.querySelector('#recordsBody').innerHTML = recordsHtml(transactions, viewer.canViewFinancials);
   const queue = transactions.filter((item) => item.status !== 'approved');
   document.querySelector('#reviewQueue').innerHTML = queue.length ? queue.map((item) => `<div class="queue-item"><div><strong>${item.reference} · ${item.description}</strong><p>${euro(item.amount)} · ${titleStatus(item.status)}</p></div><button class="text-button" data-reference="${item.reference}">Review proposal</button></div>`).join('') : '<div class="empty-note">Nothing is waiting for a manager decision.</div>';
   document.querySelectorAll('[data-reference]').forEach((button) => button.addEventListener('click', () => showManagerReview(button.dataset.reference)));
+  document.querySelectorAll('[data-retry-reference]').forEach((button) => button.addEventListener('click', () => {
+    document.querySelector('[data-view="workspace"]').click();
+    showManagerReview(button.dataset.retryReference);
+  }));
 }
 
 function proposalText(item) {
