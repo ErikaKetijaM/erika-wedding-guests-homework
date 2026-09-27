@@ -34,7 +34,7 @@ async function loadDashboard() {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || 'Could not load the dashboard.');
   const { metrics, transactions } = data;
-  document.querySelector('#integrationStatus').innerHTML = '<span><i class="dot"></i> Live Supabase data</span><span>Telegram: connected</span><span>Google Sheets: not connected</span>';
+  document.querySelector('#integrationStatus').innerHTML = `<span><i class="dot"></i> Live Supabase data</span><span>Telegram: connected</span><span>Google Sheets: ${data.integrations.googleSheets ? 'connected' : 'not connected'}</span>`;
   document.querySelector('#companyResult').textContent = euro(metrics.companyResult);
   document.querySelector('#companyResultNote').textContent = `Project A ${euro(metrics.projectAResult)} · Project B ${euro(metrics.projectBResult)}`;
   document.querySelector('#approvedIncome').textContent = euro(metrics.income);

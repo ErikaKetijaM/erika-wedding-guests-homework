@@ -21,6 +21,7 @@ export default async function handler(_req, res) {
   const allCommission = approvedSales.reduce((sum, item) => sum + commission(item), 0);
   res.status(200).json({
     transactions,
+    integrations: { googleSheets: Boolean(process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_JSON) },
     metrics: {
       income: incomeA + incomeB, incomeA, incomeB, commission: allCommission,
       commissionByPerson: {
