@@ -103,7 +103,7 @@ function showManagerReview(reference) {
   const item = state.transactions.find((record) => record.reference === reference);
   if (!item) return;
   document.querySelector('#approvalReference').value = item.reference;
-  document.querySelector('#managerReviewDetail').textContent = `${proposalText(item)} Final decision: ${item.status === 'approved' ? 'approved' : 'not decided yet'}.`;
+  document.querySelector('#managerReviewDetail').textContent = `${proposalText(item)} Final decision: ${item.status === 'approved' ? 'approved' : 'not decided yet'}. Telegram notification: ${notificationLabel(item.notification_status)}.`;
   document.querySelector('#retryReference').value = item.reference;
   document.querySelector('#retryEventType').value = item.notification_event_type || 'submission';
   const canRetryNotification = ['failed', 'not_applicable'].includes(item.notification_status);
