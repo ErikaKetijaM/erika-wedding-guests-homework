@@ -8,6 +8,8 @@ export default async function handler(request, response) {
     const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) return response.status(503).json({ error: 'Database is not configured.' });
     const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+    const existing = (await fetch(`${url}/rest/v1/employees?telegram_user_id=eq.${telegramUserId}&select=display_name`, { headers }).then((item) => item.json()))[0];
+    if (existing?.display_name !== 'Test Telegram Salesperson') return response.status(409).json({ error: `This Telegram account is already linked to ${existing.display_name}. Use an unlinked account for the fictional instructor test; your real homework link will stay untouched.` });
     let employee = (await fetch(`${url}/rest/v1/employees?display_name=eq.Test%20Telegram%20Salesperson&select=id`, { headers }).then((item) => item.json()))[0];
     if (!employee) {
       const created = await fetch(`${url}/rest/v1/employees`, { method: 'POST', headers, body: JSON.stringify({ display_name: 'Test Telegram Salesperson', role: 'salesperson' }) });
