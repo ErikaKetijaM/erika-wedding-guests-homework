@@ -9,6 +9,7 @@ Day 4 homework application by **Ērika Ketija Muižniece**.
 - Telegram supports `/start`, `/sale`, and `/expense`; Telegram-originated records retain their original chat ID for later approval/allocation notices.
 - Google Sheets synchronizes by transaction reference: a retry or approval updates the existing row instead of adding a duplicate.
 - Svetlana can approve decisions with the manager passcode. Other demonstration roles see only their own ledger entries and cannot see company financial results or manager controls in the app.
+- The public **Test this system** page lets an instructor link their own Telegram account to a fictional test salesperson, submit a test sale, and approve or change that fictional test without receiving a private administrator password. The approval reply returns to the original Telegram chat.
 
 ## Demonstration role
 

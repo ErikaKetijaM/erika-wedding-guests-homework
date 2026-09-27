@@ -147,6 +147,23 @@ document.querySelector('#syncSheetsButton').addEventListener('click', async () =
   state.dashboardCache = {}; await loadDashboard(true);
 });
 
+document.querySelector('#linkTestTelegram').addEventListener('click', async () => {
+  const message = document.querySelector('#testLinkMessage');
+  message.textContent = 'Linking fictional test employee…';
+  const response = await fetch('/api/setup-telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'link-test', telegramUserId: document.querySelector('#testTelegramUserId').value.trim(), chatId: document.querySelector('#testTelegramChatId').value.trim() }) });
+  const data = await response.json();
+  message.textContent = response.ok ? data.message : (data.error || 'Could not link the Telegram account.');
+});
+
+document.querySelector('#approveTestButton').addEventListener('click', async () => {
+  const message = document.querySelector('#testApprovalMessage');
+  message.textContent = 'Saving fictional test approval…';
+  const response = await fetch('/api/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference: document.querySelector('#testApprovalReference').value.trim().toUpperCase(), role: 'Svetlana', decision: document.querySelector('#testApprovalDecision').value.trim(), testMode: true }) });
+  const data = await response.json();
+  message.textContent = response.ok ? (data.alreadyApproved ? 'This fictional test record is already approved.' : 'Approved. Check your original Telegram chat for the decision message.') : (data.error || 'Could not approve this test record.');
+  if (response.ok) { state.dashboardCache = {}; await loadDashboard(true); }
+});
+
 const managerDecisionField = document.querySelector('#managerDecision');
 const managerReviewDetail = document.createElement('p');
 managerReviewDetail.id = 'managerReviewDetail';
@@ -165,7 +182,7 @@ document.querySelector('#retryNotificationButton').addEventListener('click', asy
   if (response.ok) { state.dashboardCache = {}; await loadDashboard(true); }
 });
 
-const viewTitles = { dashboard: 'At a glance', workspace: 'The workroom', records: 'The ledger', guide: 'House guide' };
+const viewTitles = { dashboard: 'At a glance', workspace: 'The workroom', records: 'The ledger', test: 'Test this system', guide: 'House guide' };
 document.querySelectorAll('[data-view]').forEach((control) => control.addEventListener('click', (event) => {
   event.preventDefault();
   const view = control.dataset.view;
